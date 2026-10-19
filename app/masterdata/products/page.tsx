@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { productApi, categoryApi, unitApi } from "@/lib/api/masterdata";
-import type { Product, ProductCategory, Unit, CreateProductRequest } from "@/types";
+import type {
+  Product,
+  ProductCategory,
+  Unit,
+  CreateProductRequest,
+} from "@/types";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -93,7 +98,8 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    if (!window.confirm("Are you sure you want to delete this product?"))
+      return;
     try {
       await productApi.deleteProduct(id);
       await refreshProducts();
@@ -144,222 +150,294 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold leading-6 text-zinc-900 dark:text-white">Products (Master Data)</h1>
-          <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-            A list of all products including their SKU, name, price, and stock info.
+    <div>
+      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Products (Master Data)
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            A list of all products including their SKU, name, price, and stock
+            info.
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            onClick={handleOpenNew}
-            className="block rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            Add Product
-          </button>
-        </div>
+        <button
+          onClick={handleOpenNew}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+        >
+          + Add Product
+        </button>
       </div>
 
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-zinc-300 dark:divide-zinc-700">
-                <thead className="bg-zinc-50 dark:bg-zinc-800">
-                  <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100 sm:pl-6">
-                      SKU
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      Name
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      Category
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      Unit
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      Price
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      Status
-                    </th>
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-700 dark:bg-zinc-900">
-                  {products.map((product) => (
-                    <tr key={product.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 sm:pl-6">
-                        {product.sku}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-zinc-500 dark:text-zinc-300">
-                        {product.name}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-zinc-500 dark:text-zinc-300">
-                        {product.category_name || product.product_category?.name || "-"}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-zinc-500 dark:text-zinc-300">
-                        {product.unit_name || product.unit?.name || "-"}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-zinc-500 dark:text-zinc-300 text-right">
-                        {Number(product.sale_price).toLocaleString()}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-zinc-500 dark:text-zinc-300 text-center">
-                        {product.is_active ? (
-                          <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Active</span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Inactive</span>
-                        )}
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <button
-                          onClick={() => handleOpenEdit(product)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                >
+                  SKU
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                >
+                  Name
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                >
+                  Category
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                >
+                  Unit
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
+                >
+                  Price
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
+                >
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {products.map((product) => (
+                <tr key={product.id} className="hover:bg-slate-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {product.sku}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    {product.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    {product.category_name ||
+                      product.product_category?.name ||
+                      "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    {product.unit_name || product.unit?.name || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-right">
+                    {Number(product.sale_price).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                    {product.is_active ? (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleOpenEdit(product)}
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="fixed inset-0 bg-zinc-500 bg-opacity-75 transition-opacity"></div>
-          <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-              <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-zinc-900 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingId ? "Edit Product" : "New Product"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <h3 className="text-base font-semibold leading-6 text-zinc-900 dark:text-zinc-100" id="modal-title">
-                    {editingId ? "Edit Product" : "New Product"}
-                  </h3>
-                  <div className="mt-4">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-100">SKU</label>
-                        <input
-                          type="text"
-                          required
-                          disabled={!!editingId} // Usually SKU cannot be changed
-                          value={formData.sku}
-                          onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                          className="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-zinc-900 dark:text-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 disabled:opacity-50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-100">Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-zinc-900 dark:text-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-100">Category</label>
-                          <select
-                            value={formData.category_id}
-                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                            className="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-zinc-900 dark:text-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-700 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                          >
-                            <option value="">-- None --</option>
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-100">Unit</label>
-                          <select
-                            required
-                            value={formData.unit_id}
-                            onChange={(e) => setFormData({ ...formData, unit_id: e.target.value })}
-                            className="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-zinc-900 dark:text-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-700 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                          >
-                            <option value="">-- Select --</option>
-                            {units.map((u) => (
-                              <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-100">Sale Price</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            required
-                            value={formData.sale_price}
-                            onChange={(e) => setFormData({ ...formData, sale_price: e.target.value })}
-                            className="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-zinc-900 dark:text-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-700 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-100">Reorder Point</label>
-                          <input
-                            type="number"
-                            required
-                            value={formData.reorder_point}
-                            onChange={(e) => setFormData({ ...formData, reorder_point: e.target.value })}
-                            className="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-zinc-900 dark:text-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-700 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                          />
-                        </div>
-                      </div>
-                      {editingId && (
-                        <div className="flex items-center gap-2 mt-4">
-                          <input
-                            type="checkbox"
-                            id="is_active"
-                            checked={formData.is_active}
-                            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                            className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600"
-                          />
-                          <label htmlFor="is_active" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            Active (Available for sales)
-                          </label>
-                        </div>
-                      )}
-                      
-                      <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                        <button
-                          type="submit"
-                          className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:col-start-2"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsModalOpen(false)}
-                          className="mt-3 inline-flex w-full justify-center rounded-md bg-white dark:bg-zinc-800 px-3 py-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100 shadow-sm ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 sm:col-start-1 sm:mt-0"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    SKU
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!!editingId} // Usually SKU cannot be changed
+                    value={formData.sku}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sku: e.target.value })
+                    }
+                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          category_id: e.target.value,
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    >
+                      <option value="">-- None --</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Unit
+                    </label>
+                    <select
+                      required
+                      value={formData.unit_id}
+                      onChange={(e) =>
+                        setFormData({ ...formData, unit_id: e.target.value })
+                      }
+                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    >
+                      <option value="">-- Select --</option>
+                      {units.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Sale Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={formData.sale_price}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sale_price: e.target.value })
+                      }
+                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Reorder Point
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.reorder_point}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          reorder_point: e.target.value,
+                        })
+                      }
+                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    />
+                  </div>
+                </div>
+                {editingId && (
+                  <div className="flex items-center gap-2 mt-4">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={formData.is_active}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_active: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                    />
+                    <label
+                      htmlFor="is_active"
+                      className="text-sm font-medium text-slate-900"
+                    >
+                      Active (Available for sales)
+                    </label>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

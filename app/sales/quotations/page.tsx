@@ -15,6 +15,7 @@ export default function QuotationsPage() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [viewId, setViewId] = useState<number | null>(null);
 
   // Form State
@@ -32,9 +33,13 @@ export default function QuotationsPage() {
     lines: [],
   });
 
+  const [userId, setUserId] = useState<number>(1); // Default to 1
+
   const fetchData = async () => {
     try {
       setLoading(true);
+      const { authApi } = await import("@/lib/api");
+      
       const [qtData, custData, prodData] = await Promise.all([
         quotationApi.getQuotations(),
         customerApi.getCustomers(),
@@ -43,6 +48,13 @@ export default function QuotationsPage() {
       setQuotations(qtData);
       setCustomers(custData);
       setProducts(prodData);
+      
+      try {
+        const user = await authApi.getMe();
+        if (user && user.id) setUserId(user.id);
+      } catch (e) {
+        console.error("Failed to get current user", e);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -90,7 +102,10 @@ export default function QuotationsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+
     try {
+      setSubmitting(true);
       const payload: CreateQuotationRequest = {
         qt_date: new Date(formData.qt_date).toISOString(),
         valid_until: new Date(formData.valid_until).toISOString(),
@@ -99,6 +114,7 @@ export default function QuotationsPage() {
         vat_amount: vat,
         total_amount: total,
         note: formData.note,
+        created_by: userId,
         lines: formData.lines.map(l => ({
           product_id: Number(l.product_id),
           qty: Number(l.qty),
@@ -108,19 +124,47 @@ export default function QuotationsPage() {
       };
       await quotationApi.createQuotation(payload);
       setIsModalOpen(false);
-      fetchData();
-    } catch (err: any) {
-      alert("Error: " + (err.message || "Failed to create"));
+      await fetchData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert("Error: " + (err.message || "Failed to create"));
+      } else {
+        alert("Failed to create");
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleApprove = async (id: number) => {
-    if (!confirm("Are you sure you want to approve this quotation?")) return;
+  const handleSubmitQuotation = async (id: number) => {
+    if (!confirm("ต้องการส่งใบเสนอราคานี้ให้ลูกค้าใช่หรือไม่?")) return;
     try {
+      await quotationApi.submitQuotation(id);
+      fetchData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert("Error: " + err.message);
+      } else {
+        alert("เกิดข้อผิดพลาดในการส่งใบเสนอราคา");
+      }
+    }
+  };
+
+  const handleApprove = async (id: number, currentStatus: string) => {
+    if (!confirm("ต้องการตอบรับ/อนุมัติใบเสนอราคานี้ใช่หรือไม่?")) return;
+    try {
+      // Backend requires draft -> pending -> approved
+      if (currentStatus === "draft") {
+        await quotationApi.submitQuotation(id);
+      }
       await quotationApi.approveQuotation(id);
       fetchData();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert("Error: " + err.message);
+      } else {
+        alert("เกิดข้อผิดพลาดในการอนุมัติใบเสนอราคา");
+      }
     }
   };
 
@@ -170,15 +214,59 @@ export default function QuotationsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{qt.customer?.name || qt.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">{Number(qt.total_amount).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${qt.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {qt.status === 'draft' ? 'ร่าง' : qt.status === 'approved' ? 'อนุมัติแล้ว' : qt.status}
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    qt.status === 'approved'
+                      ? 'bg-green-100 text-green-800'
+                      : qt.status === 'pending'
+                      ? 'bg-blue-100 text-blue-800'
+                      : qt.status === 'cancelled'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {qt.status === 'draft'
+                      ? 'ร่าง'
+                      : qt.status === 'pending'
+                      ? 'ส่งแล้ว (รอตอบรับ)'
+                      : qt.status === 'approved'
+                      ? 'อนุมัติแล้ว'
+                      : qt.status === 'cancelled'
+                      ? 'ยกเลิก'
+                      : qt.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {qt.status === 'draft' && (
-                    <button onClick={() => handleApprove(qt.id)} className="text-green-600 hover:text-green-900 mr-4">อนุมัติ</button>
+                    <>
+                      <button
+                        onClick={() => handleSubmitQuotation(qt.id)}
+                        className="text-amber-600 hover:text-amber-900 mr-3"
+                      >
+                        ส่งให้ลูกค้า
+                      </button>
+                      <button
+                        onClick={() => handleApprove(qt.id, qt.status)}
+                        className="text-green-600 hover:text-green-900 mr-3"
+                      >
+                        อนุมัติ
+                      </button>
+                    </>
                   )}
-                  <button onClick={() => router.push(`/sales/sales-orders?ref_qt=${qt.id}`)} className="text-blue-600 hover:text-blue-900">สร้างใบสั่งขาย</button>
+                  {qt.status === 'pending' && (
+                    <button
+                      onClick={() => handleApprove(qt.id, qt.status)}
+                      className="text-green-600 hover:text-green-900 mr-3"
+                    >
+                      ลูกค้าตอบรับ (อนุมัติ)
+                    </button>
+                  )}
+                  {qt.status === 'approved' && (
+                    <button
+                      onClick={() => router.push(`/sales/sales-orders?ref_qt=${qt.id}`)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      สร้างใบสั่งขาย
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -305,8 +393,28 @@ export default function QuotationsPage() {
             </div>
             
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded hover:bg-slate-100 font-medium">ยกเลิก</button>
-              <button type="submit" form="qt-form" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">บันทึกใบเสนอราคา</button>
+              <button 
+                type="button"
+                disabled={submitting}
+                onClick={() => setIsModalOpen(false)} 
+                className="px-4 py-2 border border-slate-300 text-slate-700 rounded hover:bg-slate-100 font-medium disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                type="submit" 
+                form="qt-form" 
+                disabled={submitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {submitting && (
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {submitting ? "กำลังบันทึก..." : "บันทึกใบเสนอราคา"}
+              </button>
             </div>
           </div>
         </div>

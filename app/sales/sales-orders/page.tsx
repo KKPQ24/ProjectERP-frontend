@@ -4,9 +4,10 @@ import { useEffect, useState, Suspense } from "react";
 import { salesOrderApi, quotationApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
 import type { SalesOrder, Quotation, Customer, Product, CreateSalesOrderRequest } from "@/types";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 function SalesOrdersContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const refQtId = searchParams.get('ref_qt');
   
@@ -16,7 +17,9 @@ function SalesOrdersContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<{
     so_date: string;
@@ -35,6 +38,8 @@ function SalesOrdersContent() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const { authApi } = await import("@/lib/api");
+      
       const [soData, qtData, custData, prodData] = await Promise.all([
         salesOrderApi.getSalesOrders(),
         quotationApi.getQuotations(),
@@ -45,6 +50,13 @@ function SalesOrdersContent() {
       setQuotations(qtData.filter(q => q.status === 'approved')); // Only approved can be referenced
       setCustomers(custData);
       setProducts(prodData);
+      
+      try {
+        const user = await authApi.getMe();
+        if (user && user.id) setUserId(user.id);
+      } catch (e) {
+        console.error("Failed to fetch current user", e);
+      }
       
       if (refQtId && !isModalOpen) {
         handleSelectQuotation(refQtId, qtData);
@@ -120,7 +132,10 @@ function SalesOrdersContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+
     try {
+      setSubmitting(true);
       const payload: CreateSalesOrderRequest = {
         so_date: new Date(formData.so_date).toISOString(),
         customer_id: Number(formData.customer_id),
@@ -129,6 +144,7 @@ function SalesOrdersContent() {
         vat_amount: vat,
         total_amount: total,
         note: formData.note,
+        created_by: userId,
         lines: formData.lines.map(l => ({
           product_id: Number(l.product_id),
           qty: Number(l.qty),
@@ -138,9 +154,19 @@ function SalesOrdersContent() {
       };
       await salesOrderApi.createSalesOrder(payload);
       setIsModalOpen(false);
-      fetchData();
-    } catch (err: any) {
-      alert("Error: " + (err.message || "Failed to create"));
+      // Clear ref_qt param from URL if present
+      if (refQtId) {
+        router.replace("/sales/sales-orders");
+      }
+      await fetchData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert("Error: " + (err.message || "Failed to create"));
+      } else {
+        alert("Failed to create");
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -149,8 +175,26 @@ function SalesOrdersContent() {
     try {
       await salesOrderApi.approveSalesOrder(id);
       fetchData();
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert("Error: " + err.message);
+      } else {
+        alert("Failed to approve");
+      }
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    if (!confirm("ต้องการยกเลิกใบสั่งขายนี้ใช่หรือไม่?")) return;
+    try {
+      await salesOrderApi.cancelSalesOrder(id);
+      fetchData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert("Error: " + err.message);
+      } else {
+        alert("Failed to cancel");
+      }
     }
   };
 
@@ -206,10 +250,18 @@ function SalesOrdersContent() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {so.status === 'draft' && (
-                    <button onClick={() => handleApprove(so.id)} className="text-green-600 hover:text-green-900 mr-4">อนุมัติ</button>
+                    <>
+                      <button onClick={() => handleApprove(so.id)} className="text-green-600 hover:text-green-900 mr-4">อนุมัติ</button>
+                      <button onClick={() => handleCancel(so.id)} className="text-red-500 hover:text-red-700 mr-2">ยกเลิก</button>
+                    </>
                   )}
                   {so.status === 'approved' && (
-                    <span className="text-slate-400">สร้างใบส่งของ &gt;</span>
+                    <button onClick={() => {
+                      router.push(`/sales/shipments?ref_so=${so.id}`);
+                    }} className="text-blue-600 hover:text-blue-900">สร้างใบส่งของ &gt;</button>
+                  )}
+                  {so.status === 'cancelled' && (
+                    <span className="text-slate-400">ยกเลิกแล้ว</span>
                   )}
                 </td>
               </tr>
@@ -355,8 +407,28 @@ function SalesOrdersContent() {
             </div>
             
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded hover:bg-slate-100 font-medium">ยกเลิก</button>
-              <button type="submit" form="so-form" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">บันทึกใบสั่งขาย</button>
+              <button 
+                type="button"
+                disabled={submitting}
+                onClick={() => setIsModalOpen(false)} 
+                className="px-4 py-2 border border-slate-300 text-slate-700 rounded hover:bg-slate-100 font-medium disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                type="submit" 
+                form="so-form" 
+                disabled={submitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {submitting && (
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {submitting ? "กำลังบันทึก..." : "บันทึกใบสั่งขาย"}
+              </button>
             </div>
           </div>
         </div>
