@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th">
+    <html>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-slate-800`}>
         <div className="flex h-screen overflow-hidden bg-slate-50">
           <Sidebar />
