@@ -24,6 +24,10 @@ export default function Sidebar() {
     });
   }, [pathname]);
 
+  if (pathname === "/auth/login") {
+    return null;
+  }
+
   const navGroups: NavGroup[] = [
     {
       label: "ขาย",

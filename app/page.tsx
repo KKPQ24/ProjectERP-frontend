@@ -1,4 +1,18 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getStoredToken } from "@/lib/api/client";
+
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!getStoredToken()) {
+      router.replace("/auth/login");
+    }
+  }, [router]);
+
   return (
     <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center p-8 text-center">
       <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
