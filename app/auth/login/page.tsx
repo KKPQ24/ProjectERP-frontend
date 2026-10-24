@@ -34,25 +34,22 @@ export default function LoginPage() {
         setError("เข้าสู่ระบบไม่สำเร็จ โปรดลองอีกครั้ง");
       }
     } finally {
-        
       setLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-[calc(100vh-80px)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             เข้าสู่ระบบ
           </h2>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Mini Project ERP System
-          </p>
+          <p className="mt-2 text-sm text-slate-600">Mini Project ERP System</p>
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <div className="flex items-center gap-2">
               <svg
                 className="h-5 w-5 shrink-0 text-red-500"
@@ -75,7 +72,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                className="block text-sm font-medium text-slate-700"
               >
                 ชื่อผู้ใช้ (Username)
               </label>
@@ -89,7 +86,7 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="เช่น admin, sale01"
-                  className="block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400 sm:text-sm"
+                  className="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -97,7 +94,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                className="block text-sm font-medium text-slate-700"
               >
                 รหัสผ่าน (Password)
               </label>
@@ -111,12 +108,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2 pr-10 text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400 sm:text-sm"
+                  className="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 pr-10 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -163,7 +160,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -195,11 +192,11 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+        {/* <div className="text-center text-sm text-slate-600">
           ยังไม่มีบัญชีผู้ใช้?{" "}
           <Link
             href="/auth/register"
-            className="font-semibold text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100"
+            className="font-semibold text-slate-900 underline-offset-4 hover:underline"
           >
             ลงทะเบียน
           </Link>
