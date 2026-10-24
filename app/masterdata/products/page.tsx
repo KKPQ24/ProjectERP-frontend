@@ -9,8 +9,24 @@ import type {
   CreateProductRequest,
 } from "@/types";
 
+function isProductActive(value: unknown): boolean {
+  if (value === undefined || value === null) {
+    return true;
+  }
+
+  if (typeof value === "string") {
+    return !["false", "0", "inactive"].includes(value.trim().toLowerCase());
+  }
+
+  return value !== false && value !== 0;
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+  const [lowStockLoaded, setLowStockLoaded] = useState(false);
+  const [lowStockError, setLowStockError] = useState<string | null>(null);
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +47,23 @@ export default function ProductsPage() {
     is_active: true,
   });
 
+  const loadLowStockProducts = useCallback(async () => {
+    try {
+      const lowStockData = await productApi.getLowStockProducts();
+      setLowStockProducts(lowStockData);
+      setLowStockError(null);
+    } catch (err: unknown) {
+      setLowStockProducts([]);
+      setLowStockError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load low-stock products"
+      );
+    } finally {
+      setLowStockLoaded(true);
+    }
+  }, []);
+
   const loadInitialData = useCallback(async () => {
     try {
       // loading is already true initially
@@ -42,6 +75,7 @@ export default function ProductsPage() {
       setProducts(productsData);
       setCategories(categoriesData);
       setUnits(unitsData);
+      void loadLowStockProducts();
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "Failed to load data");
@@ -51,7 +85,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadLowStockProducts]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -67,6 +101,7 @@ export default function ProductsPage() {
         console.error(err.message);
       }
     }
+    await loadLowStockProducts();
   };
 
   const handleOpenNew = () => {
@@ -92,7 +127,7 @@ export default function ProductsPage() {
       unit_id: String(product.unit_id),
       sale_price: String(product.sale_price),
       reorder_point: String(product.reorder_point),
-      is_active: product.is_active ?? true,
+      is_active: isProductActive(product.is_active),
     });
     setIsModalOpen(true);
   };
@@ -149,6 +184,13 @@ export default function ProductsPage() {
     return <div className="p-8 text-center text-red-500">Error: {error}</div>;
   }
 
+  const lowStockById = new Map(
+    lowStockProducts.map((product) => [product.id, product])
+  );
+  const visibleProducts = showLowStockOnly
+    ? products.filter((product) => lowStockById.has(product.id))
+    : products;
+
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
@@ -166,6 +208,48 @@ export default function ProductsPage() {
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
           + Add Product
+        </button>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-slate-700" aria-live="polite">
+          {lowStockError ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-red-600" role="alert">
+                Could not check low stock: {lowStockError}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setLowStockLoaded(false);
+                  void loadLowStockProducts();
+                }}
+                className="font-medium text-blue-600 hover:text-blue-800"
+              >
+                Retry
+              </button>
+            </div>
+          ) : !lowStockLoaded ? (
+            <span>Checking low stock...</span>
+          ) : (
+            <span>
+              {lowStockProducts.length} product
+              {lowStockProducts.length === 1 ? "" : "s"} below reorder point
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowLowStockOnly((showing) => !showing)}
+          disabled={!lowStockLoaded || !!lowStockError}
+          aria-pressed={showLowStockOnly}
+          className={`rounded-md px-3 py-2 text-sm font-medium ${
+            showLowStockOnly
+              ? "bg-amber-100 text-amber-900"
+              : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+          } disabled:cursor-not-allowed disabled:opacity-50`}
+        >
+          {showLowStockOnly ? "Show all products" : "Show low-stock only"}
         </button>
       </div>
 
@@ -208,6 +292,12 @@ export default function ProductsPage() {
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
+                  Stock
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
+                >
                   Status
                 </th>
                 <th
@@ -219,7 +309,10 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {products.map((product) => (
+              {visibleProducts.map((product) => {
+                const lowStockProduct = lowStockById.get(product.id);
+
+                return (
                 <tr key={product.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {product.sku}
@@ -238,8 +331,19 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-right">
                     {Number(product.sale_price).toLocaleString()}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                    {lowStockProduct ? (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
+                        Low stock ({lowStockProduct.on_hand ?? "-"})
+                      </span>
+                    ) : (
+                      <span className="text-slate-600">
+                        {product.on_hand ?? "-"}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
-                    {product.is_active ? (
+                    {isProductActive(product.is_active) ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                         Active
                       </span>
@@ -264,7 +368,20 @@ export default function ProductsPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
+              {visibleProducts.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-6 py-8 text-center text-sm text-slate-500"
+                  >
+                    {showLowStockOnly
+                      ? "No low-stock products found."
+                      : "No products found."}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
