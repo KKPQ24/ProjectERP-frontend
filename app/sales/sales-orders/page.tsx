@@ -161,9 +161,9 @@ function SalesOrdersContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบสั่งขายไม่สำเร็จ"));
       } else {
-        alert("Failed to create");
+        alert("สร้างใบสั่งขายไม่สำเร็จ");
       }
     } finally {
       setSubmitting(false);
@@ -171,15 +171,15 @@ function SalesOrdersContent() {
   };
 
   const handleApprove = async (id: number) => {
-    if (!confirm("Are you sure you want to approve this Sales Order?")) return;
+    if (!confirm("คุณต้องการอนุมัติใบสั่งขายนี้ใช่หรือไม่?")) return;
     try {
       await salesOrderApi.approveSalesOrder(id);
       fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
-        alert("Failed to approve");
+        alert("อนุมัติใบสั่งขายไม่สำเร็จ");
       }
     }
   };
@@ -191,20 +191,20 @@ function SalesOrdersContent() {
       fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
-        alert("Failed to cancel");
+        alert("ยกเลิกใบสั่งขายไม่สำเร็จ");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบสั่งขาย (Sales Order)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบสั่งขาย</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบสั่งขายเพื่อเตรียมจัดส่งสินค้า</p>
         </div>
         <button
@@ -258,7 +258,7 @@ function SalesOrdersContent() {
                   {so.status === 'approved' && (
                     <button onClick={() => {
                       router.push(`/sales/shipments?ref_so=${so.id}`);
-                    }} className="text-blue-600 hover:text-blue-900">สร้างใบส่งของ &gt;</button>
+                    }} className="text-blue-600 hover:text-blue-900">สร้างใบส่งของ</button>
                   )}
                   {so.status === 'cancelled' && (
                     <span className="text-slate-400">ยกเลิกแล้ว</span>
@@ -399,7 +399,7 @@ function SalesOrdersContent() {
                 <div className="flex justify-end mt-4">
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">VAT 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>
@@ -439,7 +439,7 @@ function SalesOrdersContent() {
 
 export default function SalesOrdersPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <SalesOrdersContent />
     </Suspense>
   );

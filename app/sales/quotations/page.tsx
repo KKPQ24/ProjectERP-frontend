@@ -127,9 +127,9 @@ export default function QuotationsPage() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบเสนอราคาไม่สำเร็จ"));
       } else {
-        alert("Failed to create");
+        alert("สร้างใบเสนอราคาไม่สำเร็จ");
       }
     } finally {
       setSubmitting(false);
@@ -143,7 +143,7 @@ export default function QuotationsPage() {
       fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการส่งใบเสนอราคา");
       }
@@ -161,20 +161,20 @@ export default function QuotationsPage() {
       fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการอนุมัติใบเสนอราคา");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบเสนอราคา (Quotation)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบเสนอราคา</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบเสนอราคาและพิมพ์เอกสาร</p>
         </div>
         <button
@@ -385,7 +385,7 @@ export default function QuotationsPage() {
                 <div className="flex justify-end mt-4">
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">VAT 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>

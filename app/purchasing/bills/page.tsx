@@ -204,7 +204,7 @@ function BillsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create Bill"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบตั้งหนี้ไม่สำเร็จ"));
       } else {
         alert("เกิดข้อผิดพลาดในการสร้างใบตั้งหนี้");
       }
@@ -220,21 +220,21 @@ function BillsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการบันทึกบัญชี");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบตั้งหนี้ (Supplier Bill)</h1>
-          <p className="mt-2 text-sm text-slate-600">บันทึกใบแจ้งหนี้จากผู้ขาย (Supplier) เพื่อตั้งหนี้เจ้าหนี้การค้า</p>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบตั้งหนี้</h1>
+          <p className="mt-2 text-sm text-slate-600">บันทึกใบแจ้งหนี้จากผู้ขายเพื่อตั้งหนี้เจ้าหนี้การค้า</p>
         </div>
         <button
           onClick={() => {
@@ -325,7 +325,7 @@ function BillsContent() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg font-bold text-slate-800">สร้างใบตั้งหนี้ใหม่ (Supplier Bill)</h2>
+              <h2 className="text-lg font-bold text-slate-800">สร้างใบตั้งหนี้ใหม่</h2>
               <button disabled={submitting} onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
 
@@ -351,7 +351,7 @@ function BillsContent() {
 
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">ผู้ขาย (Supplier) *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">ผู้ขาย *</label>
                     <select
                       required
                       value={formData.supplier_id}
@@ -366,7 +366,7 @@ function BillsContent() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">เลขที่อ้างอิงผู้ขาย (Invoice No.)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">เลขที่ใบแจ้งหนี้ผู้ขาย</label>
                     <input
                       type="text"
                       placeholder="เช่น INV-2026-0001"
@@ -456,7 +456,7 @@ function BillsContent() {
                 <div className="flex justify-end mt-4">
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString("th-TH")}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">VAT 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString("th-TH")}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString("th-TH")}</span></div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString("th-TH")}</span></div>
                   </div>
                 </div>
@@ -484,7 +484,7 @@ function BillsContent() {
 
 export default function BillsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <BillsContent />
     </Suspense>
   );

@@ -144,9 +144,9 @@ function ShipmentsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบส่งของไม่สำเร็จ"));
       } else {
-        alert("Failed to create");
+        alert("สร้างใบส่งของไม่สำเร็จ");
       }
     } finally {
       setSubmitting(false);
@@ -154,22 +154,22 @@ function ShipmentsContent() {
   };
 
   const handlePost = async (id: number) => {
-    if (!confirm("Are you sure you want to post this shipment?")) return;
+    if (!confirm("คุณต้องการบันทึกบัญชีใบส่งของนี้ใช่หรือไม่?")) return;
     try {
       await shipmentApi.postShipment(id);
       fetchData();
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("เกิดข้อผิดพลาด: " + err.message);
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบส่งของ (Shipment)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบส่งของ</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการจัดส่งสินค้าให้ลูกค้า</p>
         </div>
         <button
@@ -213,7 +213,7 @@ function ShipmentsContent() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {sh.status === 'draft' && (
-                    <button onClick={() => handlePost(sh.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี (Post)</button>
+                    <button onClick={() => handlePost(sh.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี</button>
                   )}
                   {sh.status === 'posted' && (
                     <button onClick={() => router.push(`/sales/invoices?ref_sh=${sh.id}`)} className="text-blue-600 hover:text-blue-900">สร้างใบแจ้งหนี้</button>
@@ -373,7 +373,7 @@ function ShipmentsContent() {
 
 export default function ShipmentsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <ShipmentsContent />
     </Suspense>
   );

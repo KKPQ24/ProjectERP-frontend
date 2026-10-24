@@ -57,7 +57,7 @@ export default function ProductsPage() {
       setLowStockError(
         err instanceof Error
           ? err.message
-          : "Failed to load low-stock products"
+          : "ไม่สามารถโหลดข้อมูลสินค้าใกล้หมดได้"
       );
     } finally {
       setLowStockLoaded(true);
@@ -78,9 +78,9 @@ export default function ProductsPage() {
       void loadLowStockProducts();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to load data");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
-        setError("Failed to load data");
+        setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
       setLoading(false);
@@ -133,16 +133,16 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this product?"))
+    if (!window.confirm("คุณต้องการลบสินค้านี้ใช่หรือไม่?"))
       return;
     try {
       await productApi.deleteProduct(id);
       await refreshProducts();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to delete: " + (err.message || "Unknown error"));
+        alert("ลบสินค้าไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to delete");
+        alert("ลบสินค้าไม่สำเร็จ");
       }
     }
   };
@@ -169,15 +169,15 @@ export default function ProductsPage() {
       await refreshProducts();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save: " + (err.message || "Unknown error"));
+        alert("บันทึกสินค้าไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to save");
+        alert("บันทึกสินค้าไม่สำเร็จ");
       }
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading products...</div>;
+    return <div className="p-8 text-center">กำลังโหลดสินค้า...</div>;
   }
 
   if (error) {
@@ -195,19 +195,16 @@ export default function ProductsPage() {
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Products (Master Data)
-          </h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ข้อมูลสินค้า</h1>
           <p className="mt-2 text-sm text-slate-600">
-            A list of all products including their SKU, name, price, and stock
-            info.
+            รายการสินค้าพร้อมรหัสสินค้า ชื่อ ราคา และข้อมูลคงคลัง
           </p>
         </div>
         <button
           onClick={handleOpenNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
-          + Add Product
+          + เพิ่มสินค้า
         </button>
       </div>
 
@@ -216,7 +213,7 @@ export default function ProductsPage() {
           {lowStockError ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-red-600" role="alert">
-                Could not check low stock: {lowStockError}
+                ตรวจสอบสินค้าใกล้หมดไม่สำเร็จ: {lowStockError}
               </span>
               <button
                 type="button"
@@ -226,15 +223,14 @@ export default function ProductsPage() {
                 }}
                 className="font-medium text-blue-600 hover:text-blue-800"
               >
-                Retry
+                ลองอีกครั้ง
               </button>
             </div>
           ) : !lowStockLoaded ? (
-            <span>Checking low stock...</span>
+            <span>กำลังตรวจสอบสินค้าใกล้หมด...</span>
           ) : (
             <span>
-              {lowStockProducts.length} product
-              {lowStockProducts.length === 1 ? "" : "s"} below reorder point
+              สินค้าใกล้ถึงจุดสั่งซื้อ {lowStockProducts.length} รายการ
             </span>
           )}
         </div>
@@ -249,7 +245,7 @@ export default function ProductsPage() {
               : "border border-slate-300 text-slate-700 hover:bg-slate-50"
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
-          {showLowStockOnly ? "Show all products" : "Show low-stock only"}
+          {showLowStockOnly ? "แสดงสินค้าทั้งหมด" : "แสดงเฉพาะสินค้าใกล้หมด"}
         </button>
       </div>
 
@@ -262,49 +258,49 @@ export default function ProductsPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  SKU
+                  รหัสสินค้า
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Name
+                  ชื่อสินค้า
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Category
+                  หมวดหมู่
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Unit
+                  หน่วยนับ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  Price
+                  ราคา
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
-                  Stock
+                  คงเหลือ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
-                  Status
+                  สถานะ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">การดำเนินการ</span>
                 </th>
               </tr>
             </thead>
@@ -334,7 +330,7 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                     {lowStockProduct ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                        Low stock ({lowStockProduct.on_hand ?? "-"})
+                        สินค้าใกล้หมด ({lowStockProduct.on_hand ?? "-"})
                       </span>
                     ) : (
                       <span className="text-slate-600">
@@ -345,11 +341,11 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
                     {isProductActive(product.is_active) ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Active
+                        ใช้งาน
                       </span>
                     ) : (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        Inactive
+                        ไม่ใช้งาน
                       </span>
                     )}
                   </td>
@@ -358,13 +354,13 @@ export default function ProductsPage() {
                       onClick={() => handleOpenEdit(product)}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
-                      Edit
+                      แก้ไข
                     </button>
                     <button
                       onClick={() => handleDelete(product.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      ลบ
                     </button>
                   </td>
                 </tr>
@@ -377,8 +373,8 @@ export default function ProductsPage() {
                     className="px-6 py-8 text-center text-sm text-slate-500"
                   >
                     {showLowStockOnly
-                      ? "No low-stock products found."
-                      : "No products found."}
+                      ? "ไม่พบสินค้าที่มีสต็อกต่ำ"
+                      : "ไม่พบสินค้า"}
                   </td>
                 </tr>
               )}
@@ -397,7 +393,7 @@ export default function ProductsPage() {
           <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingId ? "Edit Product" : "New Product"}
+                {editingId ? "แก้ไขสินค้า" : "เพิ่มสินค้าใหม่"}
               </h2>
               <button
                 type="button"
@@ -411,7 +407,7 @@ export default function ProductsPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    SKU
+                    รหัสสินค้า (SKU)
                   </label>
                   <input
                     type="text"
@@ -426,7 +422,7 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Name
+                    ชื่อสินค้า
                   </label>
                   <input
                     type="text"
@@ -441,7 +437,7 @@ export default function ProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Category
+                      หมวดหมู่
                     </label>
                     <select
                       value={formData.category_id}
@@ -453,7 +449,7 @@ export default function ProductsPage() {
                       }
                       className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                     >
-                      <option value="">-- None --</option>
+                      <option value="">-- ไม่มี --</option>
                       {categories.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
@@ -463,7 +459,7 @@ export default function ProductsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Unit
+                      หน่วยนับ
                     </label>
                     <select
                       required
@@ -473,7 +469,7 @@ export default function ProductsPage() {
                       }
                       className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                     >
-                      <option value="">-- Select --</option>
+                      <option value="">-- เลือก --</option>
                       {units.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name}
@@ -485,7 +481,7 @@ export default function ProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Sale Price
+                      ราคาขาย
                     </label>
                     <input
                       type="number"
@@ -500,7 +496,7 @@ export default function ProductsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Reorder Point
+                      จุดสั่งซื้อ
                     </label>
                     <input
                       type="number"
@@ -534,7 +530,7 @@ export default function ProductsPage() {
                       htmlFor="is_active"
                       className="text-sm font-medium text-slate-900"
                     >
-                      Active (Available for sales)
+                      เปิดใช้งาน (พร้อมจำหน่าย)
                     </label>
                   </div>
                 )}
@@ -545,13 +541,13 @@ export default function ProductsPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                   >
-                    Save
+                    บันทึก
                   </button>
                 </div>
               </form>

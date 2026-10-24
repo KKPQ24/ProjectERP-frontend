@@ -169,7 +169,7 @@ function PurchaseOrdersContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create PO"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบสั่งซื้อไม่สำเร็จ"));
       } else {
         alert("เกิดข้อผิดพลาดในการสร้างใบสั่งซื้อ");
       }
@@ -185,7 +185,7 @@ function PurchaseOrdersContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการอนุมัติ");
       }
@@ -199,21 +199,21 @@ function PurchaseOrdersContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการยกเลิก");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบสั่งซื้อ (Purchase Order - PO)</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการสั่งซื้อสินค้ากับผู้ขาย (Supplier)</p>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบสั่งซื้อ</h1>
+          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการสั่งซื้อสินค้ากับผู้ขาย</p>
         </div>
         <button
           onClick={() => {
@@ -238,7 +238,7 @@ function PurchaseOrdersContent() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">เลขที่เอกสาร</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">อ้างอิงใบขอซื้อ</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ผู้ขาย (Supplier)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ผู้ขาย</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวม</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
@@ -321,7 +321,7 @@ function PurchaseOrdersContent() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg font-bold text-slate-800">สร้างใบสั่งซื้อใหม่ (PO)</h2>
+              <h2 className="text-lg font-bold text-slate-800">สร้างใบสั่งซื้อใหม่</h2>
               <button
                 disabled={submitting}
                 onClick={() => setIsModalOpen(false)}
@@ -353,7 +353,7 @@ function PurchaseOrdersContent() {
 
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">ผู้ขาย (Supplier) *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">ผู้ขาย *</label>
                     <select
                       required
                       value={formData.supplier_id}
@@ -474,7 +474,7 @@ function PurchaseOrdersContent() {
                       <span className="font-medium text-slate-900">{subtotal.toLocaleString("th-TH")}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">VAT 7%:</span>
+                      <span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span>
                       <span className="font-medium text-slate-900">{vat.toLocaleString("th-TH")}</span>
                     </div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base">
@@ -523,7 +523,7 @@ function PurchaseOrdersContent() {
 
 export default function PurchaseOrdersPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <PurchaseOrdersContent />
     </Suspense>
   );

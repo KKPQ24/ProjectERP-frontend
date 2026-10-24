@@ -45,7 +45,7 @@ export default function LoginPage() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             เข้าสู่ระบบ
           </h2>
-          <p className="mt-2 text-sm text-slate-600">Mini Project ERP System</p>
+          <p className="mt-2 text-sm text-slate-600">ระบบ ERP สำหรับโครงงาน</p>
         </div>
 
         {error && (
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 htmlFor="username"
                 className="block text-sm font-medium text-slate-700"
               >
-                ชื่อผู้ใช้ (Username)
+                ชื่อผู้ใช้
               </label>
               <div className="mt-1">
                 <input

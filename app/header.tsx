@@ -30,6 +30,16 @@ type DocumentSearchResult = {
   searchableText: string;
 };
 
+const documentStatusLabels: Record<string, string> = {
+  draft: "แบบร่าง",
+  pending: "รออนุมัติ",
+  waiting: "รออนุมัติ",
+  approved: "อนุมัติแล้ว",
+  posted: "ผ่านรายการแล้ว",
+  cancelled: "ยกเลิกแล้ว",
+  voided: "ยกเลิกแล้ว",
+};
+
 function createDocumentResults<T extends { id: number; status: string }>(
   documents: T[],
   options: {
@@ -284,7 +294,10 @@ export default function Header() {
                     </span>
                     <span className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-500">
                       <span>{result.date ? new Date(result.date).toLocaleDateString() : ""}</span>
-                      <span>{result.status}</span>
+                      <span>
+                        {documentStatusLabels[result.status.toLowerCase()] ??
+                          result.status}
+                      </span>
                     </span>
                   </Link>
                 ))}

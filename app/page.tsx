@@ -328,9 +328,9 @@ export default function Home() {
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
             <h1 className="text-2xl lg:text-3xl font-semibold text-slate-800">
-             Welcome to ERP Dashboard !!
+              ยินดีต้อนรับสู่ระบบ ERP
             </h1>
-            <p className="text-sm text-slate-500">Dashboard & Overview</p>
+            <p className="text-sm text-slate-500">ภาพรวมระบบ</p>
           </div>
           <span className="text-sm font-medium text-slate-600">
             {new Date().toLocaleDateString("th-TH", { dateStyle: "long" })}

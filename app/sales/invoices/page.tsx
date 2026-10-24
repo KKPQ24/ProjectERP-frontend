@@ -202,9 +202,9 @@ function InvoicesContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบแจ้งหนี้ไม่สำเร็จ"));
       } else {
-        alert("Failed to create");
+        alert("สร้างใบแจ้งหนี้ไม่สำเร็จ");
       }
     } finally {
       setSubmitting(false);
@@ -212,22 +212,22 @@ function InvoicesContent() {
   };
 
   const handlePost = async (id: number) => {
-    if (!confirm("Are you sure you want to post this invoice?")) return;
+    if (!confirm("คุณต้องการบันทึกบัญชีใบแจ้งหนี้นี้ใช่หรือไม่?")) return;
     try {
       await invoiceApi.postInvoice(id);
       fetchData();
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("เกิดข้อผิดพลาด: " + err.message);
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบแจ้งหนี้ (Invoice)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบแจ้งหนี้</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบแจ้งหนี้เพื่อเรียกเก็บเงินลูกค้า</p>
         </div>
         <button
@@ -274,7 +274,7 @@ function InvoicesContent() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {inv.status === 'draft' && (
-                    <button onClick={() => handlePost(inv.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี (Post)</button>
+                    <button onClick={() => handlePost(inv.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี</button>
                   )}
                   {inv.status === 'posted' && (
                     <button onClick={() => router.push(`/sales/receipts?ref_inv=${inv.id}`)} className="text-blue-600 hover:text-blue-900">สร้างใบรับเงิน</button>
@@ -418,7 +418,7 @@ function InvoicesContent() {
                 <div className="flex justify-end mt-4">
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">VAT 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>
@@ -458,7 +458,7 @@ function InvoicesContent() {
 
 export default function InvoicesPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <InvoicesContent />
     </Suspense>
   );

@@ -130,9 +130,9 @@ function ReceiptsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบรับเงินไม่สำเร็จ"));
       } else {
-        alert("Failed to create");
+        alert("สร้างใบรับเงินไม่สำเร็จ");
       }
     } finally {
       setSubmitting(false);
@@ -140,22 +140,22 @@ function ReceiptsContent() {
   };
 
   const handlePost = async (id: number) => {
-    if (!confirm("Are you sure you want to post this receipt?")) return;
+    if (!confirm("คุณต้องการบันทึกบัญชีใบรับเงินนี้ใช่หรือไม่?")) return;
     try {
       await receiptApi.postReceipt(id);
       fetchData();
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("เกิดข้อผิดพลาด: " + err.message);
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบรับเงิน (Receipt)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบรับเงิน</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการรับชำระเงินจากลูกค้า</p>
         </div>
         <button
@@ -203,10 +203,10 @@ function ReceiptsContent() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {rec.status === 'draft' && (
-                    <button onClick={() => handlePost(rec.id)} className="text-green-600 hover:text-green-900">บันทึกบัญชี (Post)</button>
+                    <button onClick={() => handlePost(rec.id)} className="text-green-600 hover:text-green-900">บันทึกบัญชี</button>
                   )}
                   {rec.status === 'posted' && (
-                    <span className="text-slate-400">สิ้นสุด Flow </span>
+                    <span className="text-slate-400">สิ้นสุดขั้นตอน</span>
                   )}
                 </td>
               </tr>
@@ -295,9 +295,9 @@ function ReceiptsContent() {
                         onChange={e => setFormData({...formData, method: e.target.value as PayMethod})}
                         className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="cash">เงินสด (Cash)</option>
-                        <option value="transfer">โอนเงิน (Transfer)</option>
-                        <option value="cheque">เช็ค (Cheque)</option>
+                        <option value="cash">เงินสด</option>
+                        <option value="transfer">โอนเงิน</option>
+                        <option value="cheque">เช็ค</option>
                       </select>
                     </div>
                     <div className="flex-1">
@@ -382,7 +382,7 @@ function ReceiptsContent() {
 
 export default function ReceiptsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <ReceiptsContent />
     </Suspense>
   );

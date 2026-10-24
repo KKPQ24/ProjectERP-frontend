@@ -132,7 +132,7 @@ function PaymentsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบจ่ายเงินไม่สำเร็จ"));
       } else {
         alert("เกิดข้อผิดพลาดในการสร้างใบจ่ายเงิน");
       }
@@ -148,21 +148,21 @@ function PaymentsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการบันทึกบัญชี");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบจ่ายเงิน (Payment)</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการการจ่ายชำระเงินให้ผู้ขาย (Supplier) เพื่อตัดหนี้เจ้าหนี้การค้า</p>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบจ่ายเงิน</h1>
+          <p className="mt-2 text-sm text-slate-600">จัดการการจ่ายชำระเงินให้ผู้ขายเพื่อตัดหนี้เจ้าหนี้การค้า</p>
         </div>
         <button
           onClick={() => {
@@ -229,7 +229,7 @@ function PaymentsContent() {
                     </button>
                   )}
                   {pay.status === "posted" && (
-                    <span className="text-slate-400">สิ้นสุด Flow</span>
+                    <span className="text-slate-400">สิ้นสุดขั้นตอน</span>
                   )}
                 </td>
               </tr>
@@ -250,7 +250,7 @@ function PaymentsContent() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg font-bold text-slate-800">สร้างใบจ่ายเงินใหม่ (Payment)</h2>
+              <h2 className="text-lg font-bold text-slate-800">สร้างใบจ่ายเงินใหม่</h2>
               <button disabled={submitting} onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
 
@@ -325,9 +325,9 @@ function PaymentsContent() {
                         onChange={(e) => setFormData({ ...formData, method: e.target.value as PayMethod })}
                         className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="cash">เงินสด (Cash)</option>
-                        <option value="transfer">โอนเงิน (Transfer)</option>
-                        <option value="cheque">เช็ค (Cheque)</option>
+                        <option value="cash">เงินสด</option>
+                        <option value="transfer">โอนเงิน</option>
+                        <option value="cheque">เช็ค</option>
                       </select>
                     </div>
                     <div className="flex-1">
@@ -406,7 +406,7 @@ function PaymentsContent() {
 
 export default function PaymentsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <PaymentsContent />
     </Suspense>
   );

@@ -101,7 +101,7 @@ export default function PurchaseRequisitionsPage() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create PR"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบขอซื้อไม่สำเร็จ"));
       } else {
         alert("เกิดข้อผิดพลาดในการสร้างใบขอซื้อ");
       }
@@ -117,7 +117,7 @@ export default function PurchaseRequisitionsPage() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาด");
       }
@@ -134,7 +134,7 @@ export default function PurchaseRequisitionsPage() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการอนุมัติ");
       }
@@ -148,20 +148,20 @@ export default function PurchaseRequisitionsPage() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการยกเลิก");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบขอซื้อ (Purchase Requisition - PR)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบขอซื้อ</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลคำขอซื้อสินค้าภายในองค์กรเพื่อขออนุมัติจัดซื้อ</p>
         </div>
         <button
@@ -292,7 +292,7 @@ export default function PurchaseRequisitionsPage() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg font-bold text-slate-800">สร้างใบขอซื้อใหม่ (PR)</h2>
+              <h2 className="text-lg font-bold text-slate-800">สร้างใบขอซื้อใหม่</h2>
               <button
                 disabled={submitting}
                 onClick={() => setIsModalOpen(false)}

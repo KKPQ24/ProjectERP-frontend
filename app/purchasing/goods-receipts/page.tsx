@@ -156,7 +156,7 @@ function GoodsReceiptsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create GR"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบรับของไม่สำเร็จ"));
       } else {
         alert("เกิดข้อผิดพลาดในการสร้างใบรับของ");
       }
@@ -172,20 +172,20 @@ function GoodsReceiptsContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + err.message);
+        alert("เกิดข้อผิดพลาด: " + err.message);
       } else {
         alert("เกิดข้อผิดพลาดในการบันทึกบัญชี");
       }
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบรับของ (Goods Receipt - GR)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบรับของ</h1>
           <p className="mt-2 text-sm text-slate-600">ตรวจรับสินค้าเข้าคลัง และบันทึกต้นทุนรับเข้าสต๊อกสินค้า</p>
         </div>
         <button
@@ -211,7 +211,7 @@ function GoodsReceiptsContent() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">เลขที่เอกสาร</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">อ้างอิงใบสั่งซื้อ</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ผู้ขาย (Supplier)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ผู้ขาย</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">วันที่รับของ</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
@@ -277,7 +277,7 @@ function GoodsReceiptsContent() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg font-bold text-slate-800">สร้างใบรับของใหม่ (GR)</h2>
+              <h2 className="text-lg font-bold text-slate-800">สร้างใบรับของใหม่</h2>
               <button
                 disabled={submitting}
                 onClick={() => setIsModalOpen(false)}
@@ -309,7 +309,7 @@ function GoodsReceiptsContent() {
 
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">ผู้ขาย (Supplier) *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">ผู้ขาย *</label>
                     <select
                       required
                       value={formData.supplier_id}
@@ -459,7 +459,7 @@ function GoodsReceiptsContent() {
 
 export default function GoodsReceiptsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <GoodsReceiptsContent />
     </Suspense>
   );

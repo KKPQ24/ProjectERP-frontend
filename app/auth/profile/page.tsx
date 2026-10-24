@@ -122,13 +122,13 @@ export default function ProfilePage() {
           <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-slate-500">
-                รหัสพนักงาน (ID)
+                รหัสพนักงาน
               </dt>
               <dd className="mt-1 text-sm text-slate-900">{user.id}</dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-slate-500">
-                ชื่อผู้ใช้ (Username)
+                ชื่อผู้ใช้
               </dt>
               <dd className="mt-1 text-sm font-semibold text-slate-900">
                 {user.username}
@@ -136,13 +136,13 @@ export default function ProfilePage() {
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-slate-500">
-                ชื่อ-นามสกุล (Full Name)
+                ชื่อ-นามสกุล
               </dt>
               <dd className="mt-1 text-sm text-slate-900">{user.full_name}</dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-slate-500">
-                อีเมล (Email)
+                อีเมล
               </dt>
               <dd className="mt-1 text-sm text-slate-900">
                 {user.email || "-"}
@@ -150,7 +150,7 @@ export default function ProfilePage() {
             </div>
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-slate-500">
-                บทบาท/สิทธิ์การใช้งาน (Roles)
+                บทบาทและสิทธิ์การใช้งาน
               </dt>
               <dd className="mt-2 text-sm text-slate-900">
                 {user.roles && user.roles.length > 0 ? (
@@ -175,12 +175,12 @@ export default function ProfilePage() {
                 {user.is_active !== false ? (
                   <span className="inline-flex items-center gap-1.5 text-green-600">
                     <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                    ใช้งานปกติ (Active)
+                    ใช้งานปกติ
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-red-600">
                     <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                    ถูกระงับ (Inactive)
+                    ระงับการใช้งาน
                   </span>
                 )}
               </dd>

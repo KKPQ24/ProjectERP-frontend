@@ -25,9 +25,9 @@ export default function UnitsPage() {
       setUnits(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to load data");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
-        setError("Failed to load data");
+        setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
       setLoading(false);
@@ -80,19 +80,19 @@ export default function UnitsPage() {
       await refreshUnits();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save: " + (err.message || "Unknown error"));
+        alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to save");
+        alert("บันทึกข้อมูลไม่สำเร็จ");
       }
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading units...</div>;
+    return <div className="p-8 text-center">กำลังโหลดหน่วยนับ...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
   }
 
   return (
@@ -100,17 +100,17 @@ export default function UnitsPage() {
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Units (Master Data)
+            หน่วยนับ
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            A list of all units of measure used across products.
+            รายการหน่วยนับที่ใช้กับสินค้า
           </p>
         </div>
         <button
           onClick={handleOpenNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
-          + Add Unit
+          + เพิ่มหน่วยนับ
         </button>
       </div>
 
@@ -123,19 +123,19 @@ export default function UnitsPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Code
+                  รหัส
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Name
+                  ชื่อ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">แก้ไข</span>
                 </th>
               </tr>
             </thead>
@@ -146,7 +146,7 @@ export default function UnitsPage() {
                     colSpan={3}
                     className="px-6 py-8 text-center text-slate-500"
                   >
-                    No units found.
+                    ไม่พบหน่วยนับ
                   </td>
                 </tr>
               )}
@@ -163,7 +163,7 @@ export default function UnitsPage() {
                       onClick={() => handleOpenEdit(unit)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      Edit
+                      แก้ไข
                     </button>
                   </td>
                 </tr>
@@ -183,7 +183,7 @@ export default function UnitsPage() {
           <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingId ? "Edit Unit" : "New Unit"}
+                {editingId ? "แก้ไขหน่วยนับ" : "เพิ่มหน่วยนับใหม่"}
               </h2>
               <button
                 type="button"
@@ -197,7 +197,7 @@ export default function UnitsPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Code
+                    รหัส
                   </label>
                   <input
                     type="text"
@@ -211,7 +211,7 @@ export default function UnitsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Name
+                    ชื่อ
                   </label>
                   <input
                     type="text"
@@ -230,13 +230,13 @@ export default function UnitsPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                   >
-                    Save
+                    บันทึก
                   </button>
                 </div>
               </form>

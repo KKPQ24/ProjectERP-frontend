@@ -74,7 +74,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center px-6 border-b border-slate-200">
         <Link href="/" className="font-bold text-lg text-slate-800">
-          ERP System
+          ระบบ ERP
         </Link>
       </div>
 
