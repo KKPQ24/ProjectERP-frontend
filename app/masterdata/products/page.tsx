@@ -240,9 +240,7 @@ export default function ProductsPage() {
           disabled={!lowStockLoaded || !!lowStockError}
           aria-pressed={showLowStockOnly}
           className={`rounded-md px-3 py-2 text-sm font-medium ${
-            showLowStockOnly
-              ? "bg-amber-100 text-amber-900"
-              : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+            showLowStockOnly ? "border border-slate-300 text-slate-700 hover:bg-slate-50" : "border border-slate-300 text-slate-700 hover:bg-slate-50"
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {showLowStockOnly ? "แสดงสินค้าทั้งหมด" : "แสดงเฉพาะสินค้าใกล้หมด"}
