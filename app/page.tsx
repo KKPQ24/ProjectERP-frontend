@@ -322,94 +322,115 @@ export default function Home() {
     .sort((a, b) => b.diffDays - a.diffDays);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/60 p-3 sm:p-4 lg:p-6">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-semibold text-slate-800">
-              ยินดีต้อนรับสู่ระบบ ERP
-            </h1>
-            <p className="text-sm text-slate-500">ภาพรวมระบบ</p>
+        <header className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-5 py-6 text-white shadow-xl shadow-blue-950/10 sm:px-8 sm:py-8">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-24 -z-10 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 right-1/3 -z-10 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.8)]" />
+                ERP workspace
+              </p>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+                ยินดีต้อนรับสู่ระบบ ERP
+              </h1>
+              <p className="mt-2 text-sm text-blue-100/75 sm:text-base">
+                ภาพรวมธุรกิจและรายการสำคัญของคุณในวันนี้
+              </p>
+            </div>
+            <div className="w-fit rounded-2xl border border-white/15 bg-white/10 px-4 py-3 shadow-inner shadow-white/5 backdrop-blur-sm">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-blue-100/70">
+                วันนี้
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-white sm:text-base">
+                {new Date().toLocaleDateString("th-TH", { dateStyle: "long" })}
+              </p>
+            </div>
           </div>
-          <span className="text-sm font-medium text-slate-600">
-            {new Date().toLocaleDateString("th-TH", { dateStyle: "long" })}
-          </span>
         </header>
 
         {/* KPI cards */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           {[
             {
               label: "ยอดขายรวม",
               value: `${todaySales.toLocaleString()} ฿`,
               note: "วันนี้ ",
-              color: "bg-blue-500",
+              color: "from-sky-500 to-blue-600",
+              symbol: "฿",
             },
             {
               label: "รออนุมัติ",
               value: `${allPendingItems.length} รายการ`,
               note: "PR, QT, PO, SO",
-              color: "bg-amber-500",
+              color: "from-amber-400 to-orange-500",
+              symbol: "…",
             },
             {
               label: "สินค้าเหลือน้อย",
               value: `${lowStockProducts.length} รายการ`,
               note: "ถึงจุดสั่งซื้อซ้ำ",
-              color: "bg-red-500",
+              color: "from-rose-500 to-red-600",
+              symbol: "!",
             },
             {
               label: "ลูกค้าทั้งหมด",
               value: `${dashboardData.customers.length} ราย`,
               note: "ในฐานข้อมูล",
-              color: "bg-emerald-500",
+              color: "from-emerald-400 to-teal-600",
+              symbol: "◎",
             },
           ].map((k) => (
             <div
               key={k.label}
-              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-4 hover:shadow transition-shadow"
+              className="group relative flex min-w-0 items-center gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60 sm:p-5"
             >
-              <div className={`w-1.5 self-stretch rounded-full ${k.color}`} />
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${k.color} text-lg font-bold text-white shadow-lg shadow-slate-300/50`}>
+                {k.symbol}
+              </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-slate-500">{k.label}</p>
-                <p className="text-2xl font-bold text-slate-800 truncate">
+                <p className="text-xs font-medium text-slate-500 sm:text-sm">{k.label}</p>
+                <p className="truncate text-xl font-bold tracking-tight text-slate-800 sm:text-2xl">
                   {k.value}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">{k.note}</p>
+                <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">{k.note}</p>
               </div>
             </div>
           ))}
         </section>
 
         {/* grid แยก row*/}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-12">
           {/* เอกสารที่รออนุมัติ */}
-          <section className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
+          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-8">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
+              <div className="min-w-0">
                 <h2 className="font-semibold text-slate-800">
                   เอกสารที่รออนุมัติ
                 </h2>
-                <span className="text-xs text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-400">
                   (ใบขอซื้อ PR, ใบเสนอราคา QT, PO, SO)
-                </span>
+                </p>
               </div>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">
+              <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-200/70">
                 {allPendingItems.length} รายการ
               </span>
             </div>
 
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 text-slate-500 text-xs font-medium">
+            <div className="flex-1 overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left">
+                <thead className="bg-slate-50/80 text-xs font-medium text-slate-500">
                   <tr>
-                    <th className="px-4 py-3">ประเภท</th>
-                    <th className="px-4 py-3">เลขที่เอกสาร</th>
-                    <th className="px-4 py-3">วันที่</th>
-                    <th className="px-4 py-3">ลูกค้า / ผู้ขาย</th>
-                    <th className="px-4 py-3 text-right">ยอดรวม</th>
-                    <th className="px-4 py-3 text-center">สถานะ</th>
-                    <th className="px-4 py-3 text-center">จัดการ</th>
+                    <th className="px-4 py-3 font-medium">ประเภท</th>
+                    <th className="px-4 py-3 font-medium">เลขที่เอกสาร</th>
+                    <th className="px-4 py-3 font-medium">วันที่</th>
+                    <th className="px-4 py-3 font-medium">ลูกค้า / ผู้ขาย</th>
+                    <th className="px-4 py-3 text-right font-medium">ยอดรวม</th>
+                    <th className="px-4 py-3 text-center font-medium">สถานะ</th>
+                    <th className="px-4 py-3 text-center font-medium">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -417,7 +438,7 @@ export default function Home() {
                     allPendingItems.map((item, idx) => (
                       <tr
                         key={item.docCode || idx}
-                        className="hover:bg-slate-50"
+                        className="transition-colors hover:bg-blue-50/40"
                       >
                         <td className="px-4 py-3 text-sm">
                           <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">
@@ -444,7 +465,7 @@ export default function Home() {
                         <td className="px-4 py-3 text-sm text-center">
                           <button
                             onClick={() => router.push(item.route)}
-                            className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-md font-medium transition-colors"
+                            className="min-h-9 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                           >
                             ตรวจสอบ
                           </button>
@@ -467,18 +488,18 @@ export default function Home() {
           </section>
 
           {/* สินค้าที่เหลือน้อย */}
-          <section className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[400px]">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+          <section className="flex h-[320px] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm sm:h-[360px] lg:col-span-4 lg:h-[400px]">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
               <h2 className="font-semibold text-slate-800">
                 สินค้าที่เหลือน้อย
               </h2>
-              <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+              <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-200/70">
                 {lowStockProducts.length} รายการ
               </span>
             </div>
             <div className="overflow-y-auto flex-1">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm text-slate-500 text-xs font-medium">
+              <table className="w-full min-w-[360px] text-left">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-medium text-slate-500 shadow-sm">
                   <tr>
                     <th className="px-4 py-3">ชื่อสินค้า</th>
                     <th className="px-4 py-3 text-right">คงเหลือ</th>
@@ -487,7 +508,7 @@ export default function Home() {
                 <tbody className="divide-y divide-slate-100">
                   {lowStockProducts.length > 0 ? (
                     lowStockProducts.map((item: any) => (
-                      <tr key={item.id} className="hover:bg-slate-50">
+                      <tr key={item.id} className="transition-colors hover:bg-rose-50/40">
                         <td className="px-4 py-3 text-sm text-slate-800">
                           <p className="font-medium line-clamp-1">
                             {item.name}
@@ -518,15 +539,15 @@ export default function Home() {
             </div>
           </section>
           {/* เอกสารล่าสุด 10 ราบการ */}
-          <section className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-7">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
               <h2 className="font-semibold text-slate-800">เอกสารล่าสุด</h2>
               <span className="text-xs text-slate-400">10 รายการล่าสุด</span>
             </div>
 
-            <div className="overflow-x-auto overflow-y-auto max-h-[280px]">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 text-slate-500 text-xs font-medium sticky top-0 z-10 shadow-sm">
+            <div className="max-h-[280px] overflow-auto">
+              <table className="w-full min-w-[620px] border-collapse text-left">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-medium text-slate-500 shadow-sm">
                   <tr>
                     <th className="px-4 py-3 bg-slate-50">เลขที่เอกสาร</th>
                     <th className="px-4 py-3 bg-slate-50">วันที่</th>
@@ -541,7 +562,7 @@ export default function Home() {
                       <tr
                         key={doc.docCode || idx}
                         onClick={() => router.push(doc.route)}
-                        className="hover:bg-slate-50 cursor-pointer"
+                        className="cursor-pointer transition-colors hover:bg-blue-50/40"
                       >
                         <td className="px-4 py-3 text-sm font-medium text-slate-800">
                           <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 mr-1.5">
@@ -581,11 +602,11 @@ export default function Home() {
           </section>
 
           {/* เอกสารที่ค้าง (ค้างเกิน 3 วัน) */}
-          <section className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
+          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
+              <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-semibold text-slate-800">เอกสารที่ค้าง</h2>
-                <span className="text-xs text-rose-500 font-medium bg-rose-50 px-2 py-0.5 rounded-full">
+                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600">
                   ค้างเกิน 3 วัน
                 </span>
               </div>
@@ -593,9 +614,9 @@ export default function Home() {
                 {overdueDocs.length} รายการ
               </span>
             </div>
-            <div className="overflow-x-auto overflow-y-auto max-h-[280px] flex-1">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 text-slate-500 text-xs font-medium sticky top-0 z-10 shadow-sm">
+            <div className="max-h-[280px] flex-1 overflow-auto">
+              <table className="w-full min-w-[620px] border-collapse text-left">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-medium text-slate-500 shadow-sm">
                   <tr>
                     <th className="px-4 py-3 bg-slate-50">เลขที่เอกสาร</th>
                     <th className="px-4 py-3 bg-slate-50">วันที่</th>
@@ -612,7 +633,7 @@ export default function Home() {
                       <tr
                         key={doc.docCode || idx}
                         onClick={() => router.push(doc.route)}
-                        className="hover:bg-slate-50 cursor-pointer"
+                        className="cursor-pointer transition-colors hover:bg-rose-50/40"
                       >
                         <td className="px-4 py-3 text-sm font-medium text-slate-800">
                           <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 mr-1.5">
