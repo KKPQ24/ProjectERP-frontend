@@ -328,7 +328,7 @@ export default function Home() {
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
             <h1 className="text-2xl lg:text-3xl font-semibold text-slate-800">
-             Welcome to ERP Dashboard !!
+              Welcome to ERP Dashboard !!
             </h1>
             <p className="text-sm text-slate-500">Dashboard & Overview</p>
           </div>
@@ -361,7 +361,7 @@ export default function Home() {
             {
               label: "ลูกค้าทั้งหมด",
               value: `${dashboardData.customers.length} ราย`,
-              note: "ในฐานข้อมูล",
+              note: "วันนี้",
               color: "bg-emerald-500",
             },
           ].map((k) => (
@@ -444,7 +444,7 @@ export default function Home() {
                         <td className="px-4 py-3 text-sm text-center">
                           <button
                             onClick={() => router.push(item.route)}
-                            className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-md font-medium transition-colors"
+                            className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer"
                           >
                             ตรวจสอบ
                           </button>
@@ -597,11 +597,16 @@ export default function Home() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 text-slate-500 text-xs font-medium sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="px-4 py-3 bg-slate-50">เลขที่เอกสาร</th>
-                    <th className="px-4 py-3 bg-slate-50">วันที่</th>
-                    <th className="px-4 py-3 bg-slate-50">ลูกค้า / ผู้ขาย</th>
-                    <th className="px-4 py-3 text-right bg-slate-50">ยอดรวม</th>
-                    <th className="px-4 py-3 text-center bg-slate-50">
+                    <th className="px-4 py-3 bg-slate-50 min-w-[160px] whitespace-nowrap">
+                      เลขที่เอกสาร
+                    </th>
+                    <th className="px-4 py-3 bg-slate-50 whitespace-nowrap">
+                      วันที่
+                    </th>
+                    <th className="px-4 py-3 bg-slate-50 whitespace-nowrap">
+                      ลูกค้า / ผู้ขาย
+                    </th>
+                    <th className="px-4 py-3 text-center bg-slate-50 whitespace-nowrap">
                       ระยะเวลา
                     </th>
                   </tr>
@@ -614,7 +619,7 @@ export default function Home() {
                         onClick={() => router.push(doc.route)}
                         className="hover:bg-slate-50 cursor-pointer"
                       >
-                        <td className="px-4 py-3 text-sm font-medium text-slate-800">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-800 whitespace-nowrap">
                           <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 mr-1.5">
                             {doc.docType}
                           </span>
@@ -623,17 +628,12 @@ export default function Home() {
                         <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">
                           {formatDate(doc.docDate)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600 max-w-[130px] truncate">
+                        <td className="px-4 py-3 text-sm text-slate-600 max-w-[200px] truncate whitespace-nowrap">
                           {doc.partyName}
                         </td>
-                        <td className="px-4 py-3 text-sm text-right font-medium text-slate-800 whitespace-nowrap">
-                          {doc.amount != null
-                            ? `${Number(doc.amount).toLocaleString()} ฿`
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium">
-                            ค้าง {doc.diffDays} วัน
+                        <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium whitespace-nowrap">
+                            {doc.diffDays} วัน
                           </span>
                         </td>
                       </tr>
@@ -641,8 +641,8 @@ export default function Home() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={5}
-                        className="px-4 py-10 text-center text-sm text-slate-400"
+                        colSpan={4}
+                        className="px-4 py-10 text-center text-sm text-slate-400 whitespace-nowrap"
                       >
                         ไม่มีเอกสารที่ค้างเกิน 3 วัน
                       </td>
