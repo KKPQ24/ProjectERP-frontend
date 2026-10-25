@@ -298,7 +298,7 @@ function PurchaseOrdersContent() {
                       onClick={() => router.push(`/purchasing/goods-receipts?ref_po=${po.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      สร้างใบรับของ &gt;
+                      สร้างใบรับของ 
                     </button>
                   )}
                   {po.status === "cancelled" && <span className="text-slate-400">ยกเลิกแล้ว</span>}

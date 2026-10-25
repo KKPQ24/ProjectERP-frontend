@@ -255,7 +255,7 @@ function GoodsReceiptsContent() {
                       onClick={() => router.push(`/purchasing/bills?ref_gr=${gr.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      สร้างใบตั้งหนี้ &gt;
+                      สร้างใบตั้งหนี้ 
                     </button>
                   )}
                 </td>

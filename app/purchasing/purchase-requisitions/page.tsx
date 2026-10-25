@@ -267,7 +267,7 @@ export default function PurchaseRequisitionsPage() {
                       onClick={() => router.push(`/purchasing/purchase-orders?ref_pr=${pr.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      สร้างใบสั่งซื้อ &gt;
+                      สร้างใบสั่งซื้อ 
                     </button>
                   )}
                   {pr.status === "cancelled" && (

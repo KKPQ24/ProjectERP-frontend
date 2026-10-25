@@ -303,7 +303,7 @@ function BillsContent() {
                       onClick={() => router.push(`/purchasing/payments?ref_bill=${bill.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      สร้างใบจ่ายเงิน &gt;
+                      สร้างใบจ่ายเงิน 
                     </button>
                   )}
                 </td>
