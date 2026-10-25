@@ -325,27 +325,23 @@ export default function Home() {
     <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/60 p-3 sm:p-4 lg:p-6">
       <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6">
         {/* Header */}
-        <header className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-5 py-6 text-white shadow-xl shadow-blue-950/10 sm:px-8 sm:py-8">
+        <header className="relative isolate overflow-hidden rounded-3xl px-5 py-6 shadow-xl shadow-blue-950/10 sm:px-8 sm:py-8">
           <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-24 -z-10 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 right-1/3 -z-10 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.8)]" />
-                ERP workspace
-              </p>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-                ยินดีต้อนรับสู่ระบบ ERP
+                ระบบ ERP
               </h1>
-              <p className="mt-2 text-sm text-blue-100/75 sm:text-base">
+              <p className="mt-2 text-sm sm:text-base">
                 ภาพรวมธุรกิจและรายการสำคัญของคุณในวันนี้
               </p>
             </div>
             <div className="w-fit rounded-2xl border border-white/15 bg-white/10 px-4 py-3 shadow-inner shadow-white/5 backdrop-blur-sm">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-blue-100/70">
+              <p className="text-[11px] font-medium uppercase tracking-wider">
                 วันนี้
               </p>
-              <p className="mt-0.5 text-sm font-semibold text-white sm:text-base">
+              <p className="mt-0.5 text-sm font-semibold sm:text-base">
                 {new Date().toLocaleDateString("th-TH", { dateStyle: "long" })}
               </p>
             </div>
