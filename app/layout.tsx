@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "./sidebar";
 import Header from "./header";
+import { SearchProvider } from "@/components/SearchContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,17 +26,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-slate-800`}>
-        <div className="flex h-screen overflow-hidden bg-slate-50">
-          <Sidebar />
-          <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            <Header />
-            <main className="w-full px-4 py-8 sm:px-6 lg:px-8 max-w-9xl mx-auto">
-              {children}
-            </main>
+        <SearchProvider>
+          <div className="flex h-screen overflow-hidden bg-slate-50">
+            <Sidebar />
+            <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+              <Header />
+              <main className="w-full px-4 py-8 sm:px-6 lg:px-8 max-w-9xl mx-auto">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        </SearchProvider>
       </body>
     </html>
   );

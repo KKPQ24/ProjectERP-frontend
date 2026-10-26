@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { accountApi } from "@/lib/api/masterdata";
 import type { Account, AccountType } from "@/types";
 
@@ -12,6 +13,14 @@ const ACCOUNT_TYPES: AccountType[] = [
   "expense",
 ];
 
+const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  asset: "สินทรัพย์",
+  liability: "หนี้สิน",
+  equity: "ส่วนของเจ้าของ",
+  revenue: "รายได้",
+  expense: "ค่าใช้จ่าย",
+};
+
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +28,10 @@ export default function AccountsPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = accounts.filter((account) =>
+    matchesSearch(query, [account.code, account.name, account.type, ACCOUNT_TYPE_LABELS[account.type], account.normal_balance === "D" ? "เดบิต" : "เครดิต"]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -36,9 +49,9 @@ export default function AccountsPage() {
       setAccounts(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to load data");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
-        setError("Failed to load data");
+        setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
       setLoading(false);
@@ -86,16 +99,16 @@ export default function AccountsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this account?"))
+    if (!window.confirm("คุณต้องการลบบัญชีนี้ใช่หรือไม่?"))
       return;
     try {
       await accountApi.deleteAccount(id);
       await refreshAccounts();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to delete: " + (err.message || "Unknown error"));
+        alert("ลบข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to delete");
+        alert("ลบข้อมูลไม่สำเร็จ");
       }
     }
   };
@@ -122,19 +135,19 @@ export default function AccountsPage() {
       await refreshAccounts();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save: " + (err.message || "Unknown error"));
+        alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to save");
+        alert("บันทึกข้อมูลไม่สำเร็จ");
       }
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading accounts...</div>;
+    return <div className="p-8 text-center">กำลังโหลดผังบัญชี...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
   }
 
   return (
@@ -142,21 +155,21 @@ export default function AccountsPage() {
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Accounts (Chart of Accounts)
+            ผังบัญชี
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            A list of all accounting ledger accounts, their type, and normal
-            balance.
+            รายการบัญชีแยกประเภท ประเภทบัญชี และยอดคงเหลือตามปกติ
           </p>
         </div>
         <button
           onClick={handleOpenNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
-          + Add Account
+          + เพิ่มบัญชี
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={accounts.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -166,52 +179,51 @@ export default function AccountsPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Code
+                  รหัสบัญชี
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Name
+                  ชื่อบัญชี
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Type
+                  ประเภทบัญชี
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
-                  Normal Balance
+                  ยอดคงเหลือปกติ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
-                  Status
+                  สถานะ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">การดำเนินการ</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {accounts.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    No accounts found.
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                    {accounts.length === 0
+                      ? "ไม่พบบัญชี"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {accounts.map((account) => (
+              {visible.map((account) => (
                 <tr key={account.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {account.code}
@@ -228,11 +240,11 @@ export default function AccountsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
                     {account.is_active ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Active
+                        ใช้งาน
                       </span>
                     ) : (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        Inactive
+                        ไม่ใช้งาน
                       </span>
                     )}
                   </td>
@@ -241,13 +253,13 @@ export default function AccountsPage() {
                       onClick={() => handleOpenEdit(account)}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
-                      Edit
+                      แก้ไข
                     </button>
                     <button
                       onClick={() => handleDelete(account.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      ลบ
                     </button>
                   </td>
                 </tr>
@@ -267,7 +279,7 @@ export default function AccountsPage() {
           <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingId ? "Edit Account" : "New Account"}
+                {editingId ? "แก้ไขบัญชี" : "เพิ่มบัญชีใหม่"}
               </h2>
               <button
                 type="button"
@@ -281,7 +293,7 @@ export default function AccountsPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Code
+                    รหัสบัญชี
                   </label>
                   <input
                     type="text"
@@ -296,7 +308,7 @@ export default function AccountsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Name
+                    ชื่อบัญชี
                   </label>
                   <input
                     type="text"
@@ -311,7 +323,7 @@ export default function AccountsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Type
+                      ประเภทบัญชี
                     </label>
                     <select
                       required
@@ -326,14 +338,14 @@ export default function AccountsPage() {
                     >
                       {ACCOUNT_TYPES.map((t) => (
                         <option key={t} value={t} className="capitalize">
-                          {t}
+                          {ACCOUNT_TYPE_LABELS[t]}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Normal Balance
+                      ยอดคงเหลือปกติ
                     </label>
                     <select
                       required
@@ -346,8 +358,8 @@ export default function AccountsPage() {
                       }
                       className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                     >
-                      <option value="D">Debit (D)</option>
-                      <option value="C">Credit (C)</option>
+                      <option value="D">เดบิต (D)</option>
+                      <option value="C">เครดิต (C)</option>
                     </select>
                   </div>
                 </div>
@@ -369,7 +381,7 @@ export default function AccountsPage() {
                       htmlFor="is_active"
                       className="text-sm font-medium text-slate-900"
                     >
-                      Active
+                      ใช้งาน
                     </label>
                   </div>
                 )}
@@ -380,13 +392,13 @@ export default function AccountsPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                   >
-                    Save
+                    บันทึก
                   </button>
                 </div>
               </form>

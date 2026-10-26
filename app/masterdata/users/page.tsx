@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { userApi } from "@/lib/api/masterdata";
 import type { User } from "@/types";
 
@@ -11,6 +12,10 @@ export default function UsersPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = users.filter((user) =>
+    matchesSearch(query, [user.username, user.full_name, user.email, user.user_role?.map((r) => r.role?.code).join(" ")]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -28,9 +33,9 @@ export default function UsersPage() {
       setUsers(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to load data");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
-        setError("Failed to load data");
+        setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
       setLoading(false);
@@ -78,15 +83,15 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("คุณต้องการลบผู้ใช้นี้ใช่หรือไม่?")) return;
     try {
       await userApi.deleteUser(id);
       await refreshUsers();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to delete: " + (err.message || "Unknown error"));
+        alert("ลบข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to delete");
+        alert("ลบข้อมูลไม่สำเร็จ");
       }
     }
   };
@@ -112,19 +117,19 @@ export default function UsersPage() {
       await refreshUsers();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save: " + (err.message || "Unknown error"));
+        alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to save");
+        alert("บันทึกข้อมูลไม่สำเร็จ");
       }
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading users...</div>;
+    return <div className="p-8 text-center">กำลังโหลดข้อมูลผู้ใช้งาน...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
   }
 
   return (
@@ -132,20 +137,21 @@ export default function UsersPage() {
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Users (Master Data)
+            ผู้ใช้งานระบบ
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            A list of all system users who can log in to this ERP.
+            รายชื่อผู้ใช้งานที่สามารถเข้าสู่ระบบ ERP
           </p>
         </div>
         <button
           onClick={handleOpenNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
-          + Add User
+          + เพิ่มผู้ใช้งาน
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={users.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -155,52 +161,51 @@ export default function UsersPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Username
+                  ชื่อผู้ใช้
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Full Name
+                  ชื่อ-นามสกุล
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Email
+                  อีเมล
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Roles
+                  บทบาท
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
-                  Status
+                  สถานะ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">การดำเนินการ</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {users.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    No users found.
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                    {users.length === 0
+                      ? "ไม่พบข้อมูลผู้ใช้งาน"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {users.map((user) => (
+              {visible.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {user.username}
@@ -220,11 +225,11 @@ export default function UsersPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
                     {user.is_active ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Active
+                        ใช้งาน
                       </span>
                     ) : (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        Inactive
+                        ไม่ใช้งาน
                       </span>
                     )}
                   </td>
@@ -233,13 +238,13 @@ export default function UsersPage() {
                       onClick={() => handleOpenEdit(user)}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
-                      Edit
+                      แก้ไข
                     </button>
                     <button
                       onClick={() => handleDelete(user.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      ลบ
                     </button>
                   </td>
                 </tr>
@@ -259,7 +264,7 @@ export default function UsersPage() {
           <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingId ? "Edit User" : "New User"}
+                {editingId ? "แก้ไขข้อมูลผู้ใช้งาน" : "เพิ่มผู้ใช้งานใหม่"}
               </h2>
               <button
                 type="button"
@@ -273,7 +278,7 @@ export default function UsersPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Username
+                    ชื่อผู้ใช้
                   </label>
                   <input
                     type="text"
@@ -289,7 +294,7 @@ export default function UsersPage() {
                 {!editingId && (
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Password
+                      รหัสผ่าน
                     </label>
                     <input
                       type="password"
@@ -304,7 +309,7 @@ export default function UsersPage() {
                 )}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Full Name
+                    ชื่อ-นามสกุล
                   </label>
                   <input
                     type="text"
@@ -318,7 +323,7 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Email
+                    อีเมล
                   </label>
                   <input
                     type="email"
@@ -347,7 +352,7 @@ export default function UsersPage() {
                       htmlFor="is_active"
                       className="text-sm font-medium text-slate-900"
                     >
-                      Active
+                      ใช้งาน
                     </label>
                   </div>
                 )}
@@ -358,13 +363,13 @@ export default function UsersPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                   >
-                    Save
+                    บันทึก
                   </button>
                 </div>
               </form>

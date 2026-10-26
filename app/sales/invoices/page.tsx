@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { invoiceApi, shipmentApi, salesOrderApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
 import type { Invoice, Shipment, Customer, Product, CreateInvoiceRequest } from "@/types";
@@ -16,6 +19,10 @@ function InvoicesContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = invoices.filter((inv) =>
+    matchesSearch(query, [inv.inv_no, inv.sales_order?.so_no, inv.customer?.name, statusLabel(inv.status), fmtDateShort(inv.inv_date), inv.total_amount]),
+  );
   
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -202,32 +209,22 @@ function InvoicesContent() {
       await fetchData();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Error: " + (err.message || "Failed to create"));
+        alert("เกิดข้อผิดพลาด: " + (err.message || "สร้างใบแจ้งหนี้ไม่สำเร็จ"));
       } else {
-        alert("Failed to create");
+        alert("สร้างใบแจ้งหนี้ไม่สำเร็จ");
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handlePost = async (id: number) => {
-    if (!confirm("Are you sure you want to post this invoice?")) return;
-    try {
-      await invoiceApi.postInvoice(id);
-      fetchData();
-    } catch (err: any) {
-      alert("Error: " + err.message);
-    }
-  };
-
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ใบแจ้งหนี้ (Invoice)</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">ใบแจ้งหนี้</h1>
           <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบแจ้งหนี้เพื่อเรียกเก็บเงินลูกค้า</p>
         </div>
         <button
@@ -248,6 +245,7 @@ function InvoicesContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={invoices.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -257,13 +255,20 @@ function InvoicesContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ลูกค้า</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวม</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {invoices.map(inv => (
+            {visible.map((inv) => (
               <tr key={inv.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{inv.inv_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/sales/invoices/${inv.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {inv.inv_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{inv.shipment?.sh_no || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{inv.customer?.name || inv.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">{Number(inv.total_amount).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
@@ -272,19 +277,15 @@ function InvoicesContent() {
                     {inv.status === 'draft' ? 'ร่าง' : inv.status === 'posted' ? 'บันทึกบัญชีแล้ว' : inv.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {inv.status === 'draft' && (
-                    <button onClick={() => handlePost(inv.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี (Post)</button>
-                  )}
-                  {inv.status === 'posted' && (
-                    <button onClick={() => router.push(`/sales/receipts?ref_inv=${inv.id}`)} className="text-blue-600 hover:text-blue-900">สร้างใบรับเงิน</button>
-                  )}
-                </td>
               </tr>
             ))}
-            {invoices.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">ไม่มีข้อมูลใบแจ้งหนี้</td>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {invoices.length === 0
+                    ? "ไม่มีข้อมูลใบแจ้งหนี้"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
+                </td>
               </tr>
             )}
           </tbody>
@@ -418,7 +419,7 @@ function InvoicesContent() {
                 <div className="flex justify-end mt-4">
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">VAT 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>
@@ -458,7 +459,7 @@ function InvoicesContent() {
 
 export default function InvoicesPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="p-8">กำลังโหลด...</div>}>
       <InvoicesContent />
     </Suspense>
   );

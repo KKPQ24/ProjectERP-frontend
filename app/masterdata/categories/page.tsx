@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { categoryApi } from "@/lib/api/masterdata";
 import type { ProductCategory } from "@/types";
 
@@ -11,6 +12,10 @@ export default function CategoriesPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = categories.filter((category) =>
+    matchesSearch(query, [category.code, category.name]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -25,9 +30,9 @@ export default function CategoriesPage() {
       setCategories(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to load data");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
-        setError("Failed to load data");
+        setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
       setLoading(false);
@@ -80,19 +85,19 @@ export default function CategoriesPage() {
       await refreshCategories();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save: " + (err.message || "Unknown error"));
+        alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to save");
+        alert("บันทึกข้อมูลไม่สำเร็จ");
       }
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading categories...</div>;
+    return <div className="p-8 text-center">กำลังโหลดหมวดหมู่สินค้า...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
   }
 
   return (
@@ -100,20 +105,21 @@ export default function CategoriesPage() {
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Product Categories (Master Data)
+            หมวดหมู่สินค้า
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            A list of all product categories used to classify products.
+            รายการหมวดหมู่สำหรับจัดประเภทสินค้า
           </p>
         </div>
         <button
           onClick={handleOpenNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
-          + Add Category
+          + เพิ่มหมวดหมู่
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={categories.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -123,34 +129,33 @@ export default function CategoriesPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Code
+                  รหัส
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Name
+                  ชื่อ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  <span className="sr-only">Edit</span>
+                  <span className="sr-only">แก้ไข</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {categories.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    No categories found.
+                  <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
+                    {categories.length === 0
+                      ? "ไม่พบหมวดหมู่สินค้า"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {categories.map((category) => (
+              {visible.map((category) => (
                 <tr key={category.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {category.code}
@@ -163,7 +168,7 @@ export default function CategoriesPage() {
                       onClick={() => handleOpenEdit(category)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      Edit
+                      แก้ไข
                     </button>
                   </td>
                 </tr>
@@ -183,7 +188,7 @@ export default function CategoriesPage() {
           <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingId ? "Edit Category" : "New Category"}
+                {editingId ? "แก้ไขหมวดหมู่" : "เพิ่มหมวดหมู่ใหม่"}
               </h2>
               <button
                 type="button"
@@ -197,7 +202,7 @@ export default function CategoriesPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Code
+                    รหัส
                   </label>
                   <input
                     type="text"
@@ -211,7 +216,7 @@ export default function CategoriesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Name
+                    ชื่อ
                   </label>
                   <input
                     type="text"
@@ -230,13 +235,13 @@ export default function CategoriesPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                   >
-                    Save
+                    บันทึก
                   </button>
                 </div>
               </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { customerApi } from "@/lib/api/masterdata";
 import type { Customer } from "@/types";
 
@@ -11,6 +12,10 @@ export default function CustomersPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = customers.filter((customer) =>
+    matchesSearch(query, [customer.code, customer.name, customer.tax_id, customer.phone, customer.email, customer.address]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -31,9 +36,9 @@ export default function CustomersPage() {
       setCustomers(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to load data");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
-        setError("Failed to load data");
+        setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
       setLoading(false);
@@ -87,16 +92,16 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this customer?"))
+    if (!window.confirm("คุณต้องการลบข้อมูลลูกค้านี้ใช่หรือไม่?"))
       return;
     try {
       await customerApi.deleteCustomer(id);
       await refreshCustomers();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to delete: " + (err.message || "Unknown error"));
+        alert("ลบข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to delete");
+        alert("ลบข้อมูลไม่สำเร็จ");
       }
     }
   };
@@ -129,19 +134,19 @@ export default function CustomersPage() {
       await refreshCustomers();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save: " + (err.message || "Unknown error"));
+        alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
-        alert("Failed to save");
+        alert("บันทึกข้อมูลไม่สำเร็จ");
       }
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading customers...</div>;
+    return <div className="p-8 text-center">กำลังโหลดข้อมูลลูกค้า...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
   }
 
   return (
@@ -149,20 +154,21 @@ export default function CustomersPage() {
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Customers (Master Data)
+            ข้อมูลลูกค้า
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            A list of all customers including contact info and credit terms.
+            รายชื่อลูกค้าพร้อมข้อมูลติดต่อและเงื่อนไขเครดิต
           </p>
         </div>
         <button
           onClick={handleOpenNew}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
         >
-          + Add Customer
+          + เพิ่มลูกค้า
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={customers.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -172,58 +178,57 @@ export default function CustomersPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Code
+                  รหัส
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Name
+                  ชื่อ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Phone
+                  เบอร์โทรศัพท์
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
-                  Email
+                  อีเมล
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  Credit Days
+                  จำนวนวันเครดิต
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
                 >
-                  Status
+                  สถานะ
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">การดำเนินการ</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {customers.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    No customers found.
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                    {customers.length === 0
+                      ? "ไม่พบข้อมูลลูกค้า"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {customers.map((customer) => (
+              {visible.map((customer) => (
                 <tr key={customer.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {customer.code}
@@ -243,11 +248,11 @@ export default function CustomersPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
                     {customer.is_active ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Active
+                        ใช้งาน
                       </span>
                     ) : (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        Inactive
+                        ไม่ใช้งาน
                       </span>
                     )}
                   </td>
@@ -256,13 +261,13 @@ export default function CustomersPage() {
                       onClick={() => handleOpenEdit(customer)}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
-                      Edit
+                      แก้ไข
                     </button>
                     <button
                       onClick={() => handleDelete(customer.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      ลบ
                     </button>
                   </td>
                 </tr>
@@ -282,7 +287,7 @@ export default function CustomersPage() {
           <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingId ? "Edit Customer" : "New Customer"}
+                {editingId ? "แก้ไขข้อมูลลูกค้า" : "เพิ่มลูกค้าใหม่"}
               </h2>
               <button
                 type="button"
@@ -297,7 +302,7 @@ export default function CustomersPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Code
+                      รหัส
                     </label>
                     <input
                       type="text"
@@ -312,7 +317,7 @@ export default function CustomersPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Tax ID
+                      เลขประจำตัวผู้เสียภาษี
                     </label>
                     <input
                       type="text"
@@ -326,7 +331,7 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Name
+                    ชื่อ
                   </label>
                   <input
                     type="text"
@@ -340,7 +345,7 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Address
+                    ที่อยู่
                   </label>
                   <textarea
                     rows={2}
@@ -354,7 +359,7 @@ export default function CustomersPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Phone
+                      เบอร์โทรศัพท์
                     </label>
                     <input
                       type="text"
@@ -367,7 +372,7 @@ export default function CustomersPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Email
+                      อีเมล
                     </label>
                     <input
                       type="email"
@@ -381,7 +386,7 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Credit Days
+                    จำนวนวันเครดิต
                   </label>
                   <input
                     type="number"
@@ -412,7 +417,7 @@ export default function CustomersPage() {
                       htmlFor="is_active"
                       className="text-sm font-medium text-slate-900"
                     >
-                      Active
+                      ใช้งาน
                     </label>
                   </div>
                 )}
@@ -423,13 +428,13 @@ export default function CustomersPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                   >
-                    Save
+                    บันทึก
                   </button>
                 </div>
               </form>

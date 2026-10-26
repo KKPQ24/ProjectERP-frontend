@@ -795,19 +795,17 @@ export interface CreateReceiptRequest {
 // ==========================================
 
 export interface TrialBalanceAccount {
-  account_id: number;
-  account_code: string;
-  account_name: string;
-  account_type: AccountType;
-  normal_balance: string;
-  total_debit: number | string;
-  total_credit: number | string;
+  code: string;
+  name: string;
+  type: AccountType;
+  debit: number | string;
+  credit: number | string;
   balance: number | string;
 }
 
 export interface TrialBalanceReport {
-  accounts: TrialBalanceAccount[];
-  total_debit: number | string;
-  total_credit: number | string;
-  is_balanced: boolean;
+  rows: TrialBalanceAccount[];
+  totalDebit: number | string;
+  totalCredit: number | string;
+  balanced: boolean;
 }

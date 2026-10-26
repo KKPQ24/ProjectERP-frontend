@@ -17,3 +17,21 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+
+/* ---- พิมพ์เอกสาร (components/doc/DocumentDetail) ---- */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  /* ซ่อนทุกอย่างในหน้าเว็บ ยกเว้นใบเอกสารที่กำลังพิมพ์ */
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}
