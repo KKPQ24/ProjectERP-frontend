@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { paymentApi, supplierBillApi } from "@/lib/api/purchasing";
 import { supplierApi, accountApi } from "@/lib/api/masterdata";
 import type { Payment, SupplierBill, Supplier, Account, CreatePaymentRequest, PayMethod } from "@/types";
@@ -16,6 +19,10 @@ function PaymentsContent() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = payments.filter((pay) =>
+    matchesSearch(query, [pay.payment_no, pay.supplier?.name, statusLabel(pay.status), fmtDateShort(pay.payment_date), pay.amount, pay.note]),
+  );
 
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -141,20 +148,6 @@ function PaymentsContent() {
     }
   };
 
-  const handlePost = async (id: number) => {
-    if (!confirm("ต้องการบันทึกบัญชี (Post) ใบจ่ายเงินนี้ใช่หรือไม่?")) return;
-    try {
-      await paymentApi.postPayment(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการบันทึกบัญชี");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -183,6 +176,7 @@ function PaymentsContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={payments.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -192,13 +186,20 @@ function PaymentsContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ช่องทาง</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดจ่าย</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {payments.map((pay) => (
+            {visible.map((pay) => (
               <tr key={pay.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{pay.payment_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/purchasing/payments/${pay.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {pay.payment_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                   {pay.supplier?.name || `Supplier #${pay.supplier_id}`}
                 </td>
@@ -219,25 +220,14 @@ function PaymentsContent() {
                     {pay.status === "draft" ? "ร่าง" : pay.status === "posted" ? "บันทึกบัญชีแล้ว" : pay.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {pay.status === "draft" && (
-                    <button
-                      onClick={() => handlePost(pay.id)}
-                      className="text-green-600 hover:text-green-900"
-                    >
-                      บันทึกบัญชี (Post)
-                    </button>
-                  )}
-                  {pay.status === "posted" && (
-                    <span className="text-slate-400">สิ้นสุดขั้นตอน</span>
-                  )}
-                </td>
               </tr>
             ))}
-            {payments.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                  ไม่มีข้อมูลใบจ่ายเงิน
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {payments.length === 0
+                    ? "ไม่มีข้อมูลใบจ่ายเงิน"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                 </td>
               </tr>
             )}

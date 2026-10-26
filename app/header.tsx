@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
+import { useSearch } from "@/components/SearchContext";
 import {
   goodsReceiptApi,
   paymentApi,
@@ -60,7 +61,7 @@ function createDocumentResults<T extends { id: number; status: string }>(
       documentType: options.documentType,
       date,
       status: document.status,
-      href: options.route,
+      href: `${options.route}/${document.id}`,
       searchableText: [
         documentNumber,
         options.documentType,
@@ -79,7 +80,10 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  // คำค้นหาใช้ร่วมกับหน้ารายการ: พิมพ์แล้วตารางในหน้านั้นกรองทันที
+  // (ปุ่ม "ค้นหา"/Enter ยังค้นข้ามทุกเอกสารเหมือนเดิม)
+  const { query: searchQuery, setQuery: setSearchQuery } = useSearch();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchResults, setSearchResults] = useState<DocumentSearchResult[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -89,6 +93,19 @@ export default function Header() {
       setIsLoggedIn(!!getStoredToken());
     });
   }, [pathname]);
+
+  // กด "/" ที่ไหนก็ได้ในหน้า เพื่อกระโดดไปที่ช่องค้นหา
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (pathname === "/auth/login") {
     return null;
@@ -232,21 +249,27 @@ export default function Header() {
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
       {/* Search */}
       <div className="flex flex-1 items-center">
-        <form className="relative w-full max-w-md" onSubmit={handleSearch}>
+        <form role="search" className="relative w-full max-w-xl" onSubmit={handleSearch}>
           <label htmlFor="search-field" className="sr-only">
             ค้นหาเอกสาร เลขที่เอกสาร หรือลูกค้า/ผู้ขาย
           </label>
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-              </svg>
-            </div>
+          <div className="group relative">
+            <svg
+              className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+            </svg>
             <input
+              ref={searchInputRef}
               id="search-field"
-              className="block w-full rounded-md border-0 py-1.5 pl-10 pr-20 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-              placeholder="ค้นหาเลขที่เอกสาร หรือลูกค้า/ผู้ขาย"
-              type="search"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-32 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+              placeholder="ค้นหาเลขที่เอกสาร ชื่อ หรือรหัส..."
+              type="text"
+              inputMode="search"
+              autoComplete="off"
               name="search"
               value={searchQuery}
               onChange={(event) => {
@@ -254,15 +277,42 @@ export default function Header() {
                 setSearchResults(null);
                 setSearchError(null);
               }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setSearchQuery("");
+                  setSearchResults(null);
+                  setSearchError(null);
+                  event.currentTarget.blur();
+                }
+              }}
               aria-controls="document-search-results"
             />
-            <button
-              type="submit"
-              className="absolute inset-y-0 right-1 my-1 rounded px-3 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-400"
-              disabled={isSearching || !searchQuery.trim()}
-            >
-              ค้นหา
-            </button>
+            <div className="absolute inset-y-0 right-1.5 flex items-center gap-1">
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults(null);
+                    setSearchError(null);
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="ล้างคำค้นหา"
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-500 transition hover:bg-slate-300 hover:text-slate-700"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                  </svg>
+                </button>
+              )}
+              <button
+                type="submit"
+                className="rounded-lg px-3 py-1 text-sm font-medium text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
+                disabled={isSearching || !searchQuery.trim()}
+              >
+                ค้นหา
+              </button>
+            </div>
           </div>
           {(isSearching || searchResults !== null || searchError) && (
             <div

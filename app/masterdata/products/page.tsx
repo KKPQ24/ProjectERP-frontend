@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { productApi, categoryApi, unitApi } from "@/lib/api/masterdata";
 import type {
   Product,
@@ -34,6 +35,7 @@ export default function ProductsPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -187,9 +189,13 @@ export default function ProductsPage() {
   const lowStockById = new Map(
     lowStockProducts.map((product) => [product.id, product])
   );
-  const visibleProducts = showLowStockOnly
-    ? products.filter((product) => lowStockById.has(product.id))
-    : products;
+  const visibleProducts = (
+    showLowStockOnly
+      ? products.filter((product) => lowStockById.has(product.id))
+      : products
+  ).filter((product) =>
+    matchesSearch(query, [product.sku, product.name, product.category_name, product.product_category?.name, product.unit_name, product.unit?.name]),
+  );
 
   return (
     <div>
@@ -240,13 +246,16 @@ export default function ProductsPage() {
           disabled={!lowStockLoaded || !!lowStockError}
           aria-pressed={showLowStockOnly}
           className={`rounded-md px-3 py-2 text-sm font-medium ${
-            showLowStockOnly ? "border border-slate-300 text-slate-700 hover:bg-slate-50" : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+            showLowStockOnly
+              ? "bg-amber-100 text-amber-900"
+              : "border border-slate-300 text-slate-700 hover:bg-slate-50"
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {showLowStockOnly ? "แสดงสินค้าทั้งหมด" : "แสดงเฉพาะสินค้าใกล้หมด"}
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visibleProducts.length} total={products.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -370,9 +379,11 @@ export default function ProductsPage() {
                     colSpan={8}
                     className="px-6 py-8 text-center text-sm text-slate-500"
                   >
-                    {showLowStockOnly
-                      ? "ไม่พบสินค้าที่มีสต็อกต่ำ"
-                      : "ไม่พบสินค้า"}
+                    {query.trim()
+                      ? `ไม่พบรายการที่ตรงกับ “${query.trim()}”`
+                      : showLowStockOnly
+                        ? "ไม่พบสินค้าที่มีสต็อกต่ำ"
+                        : "ไม่พบสินค้า"}
                   </td>
                 </tr>
               )}

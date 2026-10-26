@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import NavIcon, { type NavIconName } from "@/components/NavIcon";
 
 type NavLink = {
   label: string;
   href: string;
+  icon: NavIconName;
 };
 
 type NavGroup = {
   label: string;
+  icon: NavIconName;
   links: NavLink[];
 };
 
@@ -31,40 +34,44 @@ export default function Sidebar() {
   const navGroups: NavGroup[] = [
     {
       label: "ขาย",
+      icon: "groupSales",
       links: [
-        { label: "ใบเสนอราคา", href: "/sales/quotations" },
-        { label: "ใบสั่งขาย", href: "/sales/sales-orders" },
-        { label: "ใบส่งของ", href: "/sales/shipments" },
-        { label: "ใบแจ้งหนี้", href: "/sales/invoices" },
-        { label: "ใบรับเงิน", href: "/sales/receipts" },
+        { label: "ใบเสนอราคา", href: "/sales/quotations", icon: "quotation" },
+        { label: "ใบสั่งขาย", href: "/sales/sales-orders", icon: "salesOrder" },
+        { label: "ใบส่งของ", href: "/sales/shipments", icon: "shipment" },
+        { label: "ใบแจ้งหนี้", href: "/sales/invoices", icon: "invoice" },
+        { label: "ใบรับเงิน", href: "/sales/receipts", icon: "receipt" },
       ],
     },
     {
       label: "จัดซื้อ",
+      icon: "groupPurchasing",
       links: [
-        { label: "ใบขอซื้อ", href: "/purchasing/purchase-requisitions" },
-        { label: "ใบสั่งซื้อ", href: "/purchasing/purchase-orders" },
-        { label: "ใบรับของ", href: "/purchasing/goods-receipts" },
-        { label: "ใบตั้งหนี้", href: "/purchasing/bills" },
-        { label: "ใบจ่ายเงิน", href: "/purchasing/payments" },
+        { label: "ใบขอซื้อ", href: "/purchasing/purchase-requisitions", icon: "requisition" },
+        { label: "ใบสั่งซื้อ", href: "/purchasing/purchase-orders", icon: "purchaseOrder" },
+        { label: "ใบรับของ", href: "/purchasing/goods-receipts", icon: "goodsReceipt" },
+        { label: "ใบตั้งหนี้", href: "/purchasing/bills", icon: "bill" },
+        { label: "ใบจ่ายเงิน", href: "/purchasing/payments", icon: "payment" },
       ],
     },
     {
       label: "บัญชี",
+      icon: "groupAccounting",
       links: [
-        { label: "ผังบัญชี", href: "/masterdata/accounts" },
-        { label: "งบทดลอง", href: "/reports/trial-balance" },
+        { label: "ผังบัญชี", href: "/masterdata/accounts", icon: "accounts" },
+        { label: "งบทดลอง", href: "/reports/trial-balance", icon: "trialBalance" },
       ],
     },
     {
       label: "ข้อมูลหลัก",
+      icon: "groupMasterdata",
       links: [
-        { label: "สินค้า", href: "/masterdata/products" },
-        { label: "หมวดหมู่สินค้า", href: "/masterdata/categories" },
-        { label: "หน่วยนับ", href: "/masterdata/units" },
-        { label: "ลูกค้า", href: "/masterdata/customers" },
-        { label: "ผู้ขาย", href: "/masterdata/suppliers" },
-        { label: "ผู้ใช้งาน", href: "/masterdata/users" },
+        { label: "สินค้า", href: "/masterdata/products", icon: "product" },
+        { label: "หมวดหมู่สินค้า", href: "/masterdata/categories", icon: "category" },
+        { label: "หน่วยนับ", href: "/masterdata/units", icon: "unit" },
+        { label: "ลูกค้า", href: "/masterdata/customers", icon: "customer" },
+        { label: "ผู้ขาย", href: "/masterdata/suppliers", icon: "supplier" },
+        { label: "ผู้ใช้งาน", href: "/masterdata/users", icon: "user" },
       ],
     },
   ];
@@ -89,6 +96,7 @@ export default function Sidebar() {
                 : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >
+            <NavIcon name="dashboard" />
             แดชบอร์ด
           </Link>
         </div>
@@ -96,7 +104,8 @@ export default function Sidebar() {
         {/* Dynamic Groups */}
         {navGroups.map((group) => (
           <div key={group.label}>
-            <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <h3 className="flex items-center gap-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <NavIcon name={group.icon} className="h-4 w-4" />
               {group.label}
             </h3>
             <div className="space-y-1">
@@ -106,12 +115,18 @@ export default function Sidebar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium text-sm transition-colors ${
+                    className={`group flex items-center gap-3 px-3 py-2 rounded-md font-medium text-sm transition-colors ${
                       isActive
                         ? "bg-slate-100 text-slate-900"
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
+                    <NavIcon
+                      name={link.icon}
+                      className={`h-5 w-5 transition-colors ${
+                        isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                      }`}
+                    />
                     {link.label}
                   </Link>
                 );

@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { goodsReceiptApi, purchaseOrderApi } from "@/lib/api/purchasing";
 import { supplierApi, productApi } from "@/lib/api/masterdata";
 import type { GoodsReceipt, PurchaseOrder, Supplier, Product, CreateGoodsReceiptRequest } from "@/types";
@@ -16,6 +19,10 @@ function GoodsReceiptsContent() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = grs.filter((gr) =>
+    matchesSearch(query, [gr.gr_no, gr.purchase_order?.po_no, gr.supplier?.name, statusLabel(gr.status), fmtDateShort(gr.gr_date), gr.note]),
+  );
 
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -165,20 +172,6 @@ function GoodsReceiptsContent() {
     }
   };
 
-  const handlePost = async (id: number) => {
-    if (!confirm("ต้องการบันทึกบัญชีและนำสินค้าเข้าสต๊อก (Post GR) ใช่หรือไม่?")) return;
-    try {
-      await goodsReceiptApi.postGoodsReceipt(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการบันทึกบัญชี");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -205,6 +198,7 @@ function GoodsReceiptsContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={grs.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -214,13 +208,20 @@ function GoodsReceiptsContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ผู้ขาย</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">วันที่รับของ</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {grs.map((gr) => (
+            {visible.map((gr) => (
               <tr key={gr.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{gr.gr_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/purchasing/goods-receipts/${gr.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {gr.gr_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                   {gr.purchase_order?.po_no || (gr.po_id ? `PO #${gr.po_id}` : "-")}
                 </td>
@@ -241,30 +242,14 @@ function GoodsReceiptsContent() {
                     {gr.status === "draft" ? "ร่าง" : gr.status === "posted" ? "บันทึกสต๊อกแล้ว" : gr.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {gr.status === "draft" && (
-                    <button
-                      onClick={() => handlePost(gr.id)}
-                      className="text-green-600 hover:text-green-900 mr-4 font-medium"
-                    >
-                      บันทึกบัญชี/รับเข้าสต๊อก (Post)
-                    </button>
-                  )}
-                  {gr.status === "posted" && (
-                    <button
-                      onClick={() => router.push(`/purchasing/bills?ref_gr=${gr.id}`)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      สร้างใบตั้งหนี้ 
-                    </button>
-                  )}
-                </td>
               </tr>
             ))}
-            {grs.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                  ไม่มีข้อมูลใบรับของ
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {grs.length === 0
+                    ? "ไม่มีข้อมูลใบรับของ"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                 </td>
               </tr>
             )}

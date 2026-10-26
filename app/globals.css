@@ -5,12 +5,12 @@
   --foreground: #0f172a;
 }
 
-@theme inline {
+/* @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+} */
 
 body {
   background: var(--background);
@@ -19,3 +19,19 @@ body {
 }
 
 
+
+/* ---- พิมพ์เอกสาร (components/doc/DocumentDetail) ---- */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  /* ซ่อนทุกอย่างในหน้าเว็บ ยกเว้นใบเอกสารที่กำลังพิมพ์ */
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}

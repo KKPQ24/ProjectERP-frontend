@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { unitApi } from "@/lib/api/masterdata";
 import type { Unit } from "@/types";
 
@@ -11,6 +12,10 @@ export default function UnitsPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = units.filter((unit) =>
+    matchesSearch(query, [unit.code, unit.name]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -114,6 +119,7 @@ export default function UnitsPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={units.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -140,17 +146,16 @@ export default function UnitsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {units.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    ไม่พบหน่วยนับ
+                  <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
+                    {units.length === 0
+                      ? "ไม่พบหน่วยนับ"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {units.map((unit) => (
+              {visible.map((unit) => (
                 <tr key={unit.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {unit.code}

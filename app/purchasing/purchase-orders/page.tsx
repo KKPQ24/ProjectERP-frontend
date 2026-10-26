@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { purchaseOrderApi, purchaseRequisitionApi } from "@/lib/api/purchasing";
 import { supplierApi, productApi } from "@/lib/api/masterdata";
 import type { PurchaseOrder, PurchaseRequisition, Supplier, Product, CreatePORequest } from "@/types";
@@ -16,6 +19,10 @@ function PurchaseOrdersContent() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = pos.filter((po) =>
+    matchesSearch(query, [po.po_no, po.purchase_requisition?.pr_no, po.supplier?.name, statusLabel(po.status), fmtDateShort(po.po_date), po.total_amount, po.note]),
+  );
 
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,34 +185,6 @@ function PurchaseOrdersContent() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    if (!confirm("ต้องการอนุมัติใบสั่งซื้อนี้ใช่หรือไม่?")) return;
-    try {
-      await purchaseOrderApi.approvePO(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการอนุมัติ");
-      }
-    }
-  };
-
-  const handleCancel = async (id: number) => {
-    if (!confirm("ต้องการยกเลิกใบสั่งซื้อนี้ใช่หรือไม่?")) return;
-    try {
-      await purchaseOrderApi.cancelPO(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการยกเลิก");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -232,6 +211,7 @@ function PurchaseOrdersContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={pos.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -241,13 +221,20 @@ function PurchaseOrdersContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ผู้ขาย</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวม</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {pos.map((po) => (
+            {visible.map((po) => (
               <tr key={po.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{po.po_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/purchasing/purchase-orders/${po.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {po.po_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                   {po.purchase_requisition?.pr_no || (po.pr_id ? `PR #${po.pr_id}` : "-")}
                 </td>
@@ -276,39 +263,14 @@ function PurchaseOrdersContent() {
                       : po.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {po.status === "draft" && (
-                    <>
-                      <button
-                        onClick={() => handleApprove(po.id)}
-                        className="text-green-600 hover:text-green-900 mr-4"
-                      >
-                        อนุมัติ
-                      </button>
-                      <button
-                        onClick={() => handleCancel(po.id)}
-                        className="text-red-500 hover:text-red-700 mr-2"
-                      >
-                        ยกเลิก
-                      </button>
-                    </>
-                  )}
-                  {po.status === "approved" && (
-                    <button
-                      onClick={() => router.push(`/purchasing/goods-receipts?ref_po=${po.id}`)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      สร้างใบรับของ 
-                    </button>
-                  )}
-                  {po.status === "cancelled" && <span className="text-slate-400">ยกเลิกแล้ว</span>}
-                </td>
               </tr>
             ))}
-            {pos.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                  ไม่มีข้อมูลใบสั่งซื้อ
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {pos.length === 0
+                    ? "ไม่มีข้อมูลใบสั่งซื้อ"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                 </td>
               </tr>
             )}

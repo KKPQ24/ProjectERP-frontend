@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { receiptApi, invoiceApi } from "@/lib/api/sales";
 import { customerApi, accountApi } from "@/lib/api/masterdata";
 import type { Receipt, Invoice, Customer, Account, CreateReceiptRequest, PayMethod } from "@/types";
@@ -16,6 +19,10 @@ function ReceiptsContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = receipts.filter((rec) =>
+    matchesSearch(query, [rec.receipt_no, rec.customer?.name, statusLabel(rec.status), fmtDateShort(rec.receipt_date), rec.amount, rec.note]),
+  );
   
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -139,16 +146,6 @@ function ReceiptsContent() {
     }
   };
 
-  const handlePost = async (id: number) => {
-    if (!confirm("คุณต้องการบันทึกบัญชีใบรับเงินนี้ใช่หรือไม่?")) return;
-    try {
-      await receiptApi.postReceipt(id);
-      fetchData();
-    } catch (err: any) {
-      alert("เกิดข้อผิดพลาด: " + err.message);
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -177,6 +174,7 @@ function ReceiptsContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={receipts.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -186,13 +184,20 @@ function ReceiptsContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ช่องทาง</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวมรับ</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {receipts.map(rec => (
+            {visible.map((rec) => (
               <tr key={rec.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{rec.receipt_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/sales/receipts/${rec.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {rec.receipt_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{rec.customer?.name || rec.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{rec.method}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">{Number(rec.amount).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
@@ -201,19 +206,15 @@ function ReceiptsContent() {
                     {rec.status === 'draft' ? 'ร่าง' : rec.status === 'posted' ? 'บันทึกบัญชีแล้ว' : rec.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {rec.status === 'draft' && (
-                    <button onClick={() => handlePost(rec.id)} className="text-green-600 hover:text-green-900">บันทึกบัญชี</button>
-                  )}
-                  {rec.status === 'posted' && (
-                    <span className="text-slate-400">สิ้นสุดขั้นตอน</span>
-                  )}
-                </td>
               </tr>
             ))}
-            {receipts.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">ไม่มีข้อมูลใบรับเงิน</td>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {receipts.length === 0
+                    ? "ไม่มีข้อมูลใบรับเงิน"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
+                </td>
               </tr>
             )}
           </tbody>

@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { shipmentApi, salesOrderApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
 import type { Shipment, SalesOrder, Customer, Product, CreateShipmentRequest } from "@/types";
@@ -16,6 +19,10 @@ function ShipmentsContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = shipments.filter((sh) =>
+    matchesSearch(query, [sh.sh_no, sh.sales_order?.so_no, sh.customer?.name, statusLabel(sh.status), fmtDateShort(sh.sh_date), sh.note]),
+  );
   
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -153,16 +160,6 @@ function ShipmentsContent() {
     }
   };
 
-  const handlePost = async (id: number) => {
-    if (!confirm("คุณต้องการบันทึกบัญชีใบส่งของนี้ใช่หรือไม่?")) return;
-    try {
-      await shipmentApi.postShipment(id);
-      fetchData();
-    } catch (err: any) {
-      alert("เกิดข้อผิดพลาด: " + err.message);
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -189,6 +186,7 @@ function ShipmentsContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={shipments.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -197,13 +195,20 @@ function ShipmentsContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">อ้างอิงใบสั่งขาย</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ลูกค้า</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {shipments.map(sh => (
+            {visible.map((sh) => (
               <tr key={sh.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{sh.sh_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/sales/shipments/${sh.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {sh.sh_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{sh.sales_order?.so_no || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{sh.customer?.name || sh.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -211,19 +216,15 @@ function ShipmentsContent() {
                     {sh.status === 'draft' ? 'ร่าง' : sh.status === 'posted' ? 'บันทึกบัญชีแล้ว' : sh.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {sh.status === 'draft' && (
-                    <button onClick={() => handlePost(sh.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี</button>
-                  )}
-                  {sh.status === 'posted' && (
-                    <button onClick={() => router.push(`/sales/invoices?ref_sh=${sh.id}`)} className="text-blue-600 hover:text-blue-900">สร้างใบแจ้งหนี้</button>
-                  )}
-                </td>
               </tr>
             ))}
-            {shipments.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">ไม่มีข้อมูลใบส่งของ</td>
+                <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                  {shipments.length === 0
+                    ? "ไม่มีข้อมูลใบส่งของ"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
+                </td>
               </tr>
             )}
           </tbody>

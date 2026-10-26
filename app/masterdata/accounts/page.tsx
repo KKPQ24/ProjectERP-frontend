@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { accountApi } from "@/lib/api/masterdata";
 import type { Account, AccountType } from "@/types";
 
@@ -27,6 +28,10 @@ export default function AccountsPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = accounts.filter((account) =>
+    matchesSearch(query, [account.code, account.name, account.type, ACCOUNT_TYPE_LABELS[account.type], account.normal_balance === "D" ? "เดบิต" : "เครดิต"]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -164,6 +169,7 @@ export default function AccountsPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={accounts.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -208,17 +214,16 @@ export default function AccountsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {accounts.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    ไม่พบบัญชี
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                    {accounts.length === 0
+                      ? "ไม่พบบัญชี"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {accounts.map((account) => (
+              {visible.map((account) => (
                 <tr key={account.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {account.code}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { userApi } from "@/lib/api/masterdata";
 import type { User } from "@/types";
 
@@ -11,6 +12,10 @@ export default function UsersPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = users.filter((user) =>
+    matchesSearch(query, [user.username, user.full_name, user.email, user.user_role?.map((r) => r.role?.code).join(" ")]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -146,6 +151,7 @@ export default function UsersPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={users.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -190,17 +196,16 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {users.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    ไม่พบข้อมูลผู้ใช้งาน
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                    {users.length === 0
+                      ? "ไม่พบข้อมูลผู้ใช้งาน"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {users.map((user) => (
+              {visible.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {user.username}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { categoryApi } from "@/lib/api/masterdata";
 import type { ProductCategory } from "@/types";
 
@@ -11,6 +12,10 @@ export default function CategoriesPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = categories.filter((category) =>
+    matchesSearch(query, [category.code, category.name]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -26,7 +31,9 @@ export default function CategoriesPage() {
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
+        setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
       } else {
+        setError("ไม่สามารถโหลดข้อมูลได้");
         setError("ไม่สามารถโหลดข้อมูลได้");
       }
     } finally {
@@ -81,7 +88,9 @@ export default function CategoriesPage() {
     } catch (err: unknown) {
       if (err instanceof Error) {
         alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
+        alert("บันทึกข้อมูลไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
       } else {
+        alert("บันทึกข้อมูลไม่สำเร็จ");
         alert("บันทึกข้อมูลไม่สำเร็จ");
       }
     }
@@ -89,9 +98,11 @@ export default function CategoriesPage() {
 
   if (loading) {
     return <div className="p-8 text-center">กำลังโหลดหมวดหมู่สินค้า...</div>;
+    return <div className="p-8 text-center">กำลังโหลดหมวดหมู่สินค้า...</div>;
   }
 
   if (error) {
+    return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
     return <div className="p-8 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
   }
 
@@ -101,8 +112,10 @@ export default function CategoriesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
             หมวดหมู่สินค้า
+            หมวดหมู่สินค้า
           </h1>
           <p className="mt-2 text-sm text-slate-600">
+            รายการหมวดหมู่สำหรับจัดประเภทสินค้า
             รายการหมวดหมู่สำหรับจัดประเภทสินค้า
           </p>
         </div>
@@ -114,6 +127,7 @@ export default function CategoriesPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={categories.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -124,11 +138,13 @@ export default function CategoriesPage() {
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
                   รหัส
+                  รหัส
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
+                  ชื่อ
                   ชื่อ
                 </th>
                 <th
@@ -136,21 +152,21 @@ export default function CategoriesPage() {
                   className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase"
                 >
                   <span className="sr-only">แก้ไข</span>
+                  <span className="sr-only">แก้ไข</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {categories.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    ไม่พบหมวดหมู่สินค้า
+                  <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
+                    {categories.length === 0
+                      ? "ไม่พบหมวดหมู่สินค้า"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {categories.map((category) => (
+              {visible.map((category) => (
                 <tr key={category.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {category.code}

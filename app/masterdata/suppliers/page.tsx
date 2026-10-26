@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
 import { supplierApi } from "@/lib/api/masterdata";
 import type { Supplier } from "@/types";
 
@@ -11,6 +12,10 @@ export default function SuppliersPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { query } = useSearch();
+  const visible = suppliers.filter((supplier) =>
+    matchesSearch(query, [supplier.code, supplier.name, supplier.tax_id, supplier.phone, supplier.email, supplier.address]),
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form State
@@ -163,6 +168,7 @@ export default function SuppliersPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={suppliers.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -213,17 +219,16 @@ export default function SuppliersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {suppliers.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-8 text-center text-slate-500"
-                  >
-                    ไม่พบข้อมูลผู้ขาย
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                    {suppliers.length === 0
+                      ? "ไม่พบข้อมูลผู้ขาย"
+                      : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                   </td>
                 </tr>
               )}
-              {suppliers.map((supplier) => (
+              {visible.map((supplier) => (
                 <tr key={supplier.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {supplier.code}

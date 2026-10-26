@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { purchaseRequisitionApi } from "@/lib/api/purchasing";
 import { productApi } from "@/lib/api/masterdata";
 import type { PurchaseRequisition, Product, CreatePRRequest } from "@/types";
-import { useRouter } from "next/navigation";
 
 export default function PurchaseRequisitionsPage() {
-  const router = useRouter();
   const [prs, setPrs] = useState<PurchaseRequisition[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = prs.filter((pr) =>
+    matchesSearch(query, [pr.pr_no, statusLabel(pr.status), fmtDateShort(pr.pr_date), pr.note]),
+  );
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,51 +115,6 @@ export default function PurchaseRequisitionsPage() {
     }
   };
 
-  const handleSubmitPR = async (id: number) => {
-    if (!confirm("ต้องการส่งใบขอซื้อนี้เพื่อขออนุมัติใช่หรือไม่?")) return;
-    try {
-      await purchaseRequisitionApi.submitPR(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาด");
-      }
-    }
-  };
-
-  const handleApprove = async (id: number, currentStatus: string) => {
-    if (!confirm("ต้องการอนุมัติใบขอซื้อนี้ใช่หรือไม่?")) return;
-    try {
-      if (currentStatus === "draft") {
-        await purchaseRequisitionApi.submitPR(id);
-      }
-      await purchaseRequisitionApi.approvePR(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการอนุมัติ");
-      }
-    }
-  };
-
-  const handleCancel = async (id: number) => {
-    if (!confirm("ต้องการยกเลิกใบขอซื้อนี้ใช่หรือไม่?")) return;
-    try {
-      await purchaseRequisitionApi.cancelPR(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการยกเลิก");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -179,6 +139,7 @@ export default function PurchaseRequisitionsPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={prs.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -188,13 +149,20 @@ export default function PurchaseRequisitionsPage() {
               {/* <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">จำนวนรายการ</th> */}
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">หมายเหตุ</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {prs.map((pr) => (
+            {visible.map((pr) => (
               <tr key={pr.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{pr.pr_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/purchasing/purchase-requisitions/${pr.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {pr.pr_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{new Date(pr.pr_date).toLocaleDateString("th-TH")}</td>
                 {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                   {pr.line?.length || 0} รายการ
@@ -223,63 +191,14 @@ export default function PurchaseRequisitionsPage() {
                       : pr.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {pr.status === "draft" && (
-                    <>
-                      <button
-                        onClick={() => handleSubmitPR(pr.id)}
-                        className="text-amber-600 hover:text-amber-900 mr-3"
-                      >
-                        ส่งขออนุมัติ
-                      </button>
-                      <button
-                        onClick={() => handleApprove(pr.id, pr.status)}
-                        className="text-green-600 hover:text-green-900 mr-3"
-                      >
-                        อนุมัติ
-                      </button>
-                      <button
-                        onClick={() => handleCancel(pr.id)}
-                        className="text-red-500 hover:text-red-700 mr-2"
-                      >
-                        ยกเลิก
-                      </button>
-                    </>
-                  )}
-                  {pr.status === "pending" && (
-                    <>
-                      <button
-                        onClick={() => handleApprove(pr.id, pr.status)}
-                        className="text-green-600 hover:text-green-900 mr-3"
-                      >
-                        อนุมัติ
-                      </button>
-                      <button
-                        onClick={() => handleCancel(pr.id)}
-                        className="text-red-500 hover:text-red-700 mr-2"
-                      >
-                        ยกเลิก
-                      </button>
-                    </>
-                  )}
-                  {pr.status === "approved" && (
-                    <button
-                      onClick={() => router.push(`/purchasing/purchase-orders?ref_pr=${pr.id}`)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      สร้างใบสั่งซื้อ 
-                    </button>
-                  )}
-                  {pr.status === "cancelled" && (
-                    <span className="text-slate-400">ยกเลิกแล้ว</span>
-                  )}
-                </td>
               </tr>
             ))}
-            {prs.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                  ไม่มีข้อมูลใบขอซื้อ
+                <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                  {prs.length === 0
+                    ? "ไม่มีข้อมูลใบขอซื้อ"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                 </td>
               </tr>
             )}

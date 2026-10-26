@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { invoiceApi, shipmentApi, salesOrderApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
 import type { Invoice, Shipment, Customer, Product, CreateInvoiceRequest } from "@/types";
@@ -16,6 +19,10 @@ function InvoicesContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = invoices.filter((inv) =>
+    matchesSearch(query, [inv.inv_no, inv.sales_order?.so_no, inv.customer?.name, statusLabel(inv.status), fmtDateShort(inv.inv_date), inv.total_amount]),
+  );
   
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -215,9 +222,9 @@ function InvoicesContent() {
     if (!confirm("คุณต้องการบันทึกบัญชีใบแจ้งหนี้นี้ใช่หรือไม่?")) return;
     try {
       await invoiceApi.postInvoice(id);
-      fetchData();
-    } catch (err: any) {
-      alert("เกิดข้อผิดพลาด: " + err.message);
+      await fetchData();
+    } catch (err: unknown) {
+      alert("เกิดข้อผิดพลาด: " + (err instanceof Error ? err.message : "บันทึกบัญชีไม่สำเร็จ"));
     }
   };
 
@@ -248,6 +255,7 @@ function InvoicesContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={invoices.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -261,9 +269,17 @@ function InvoicesContent() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {invoices.map(inv => (
+            {visible.map((inv) => (
               <tr key={inv.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{inv.inv_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/sales/invoices/${inv.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {inv.inv_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{inv.shipment?.sh_no || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{inv.customer?.name || inv.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">{Number(inv.total_amount).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
@@ -282,9 +298,13 @@ function InvoicesContent() {
                 </td>
               </tr>
             ))}
-            {invoices.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">ไม่มีข้อมูลใบแจ้งหนี้</td>
+                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                  {invoices.length === 0
+                    ? "ไม่มีข้อมูลใบแจ้งหนี้"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
+                </td>
               </tr>
             )}
           </tbody>

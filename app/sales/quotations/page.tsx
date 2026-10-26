@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { quotationApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
 import type { Quotation, Customer, Product, CreateQuotationRequest } from "@/types";
-import { useRouter } from "next/navigation";
 
 export default function QuotationsPage() {
-  const router = useRouter();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = quotations.filter((qt) =>
+    matchesSearch(query, [qt.qt_no, qt.customer?.name, statusLabel(qt.status), fmtDateShort(qt.qt_date), qt.total_amount, qt.note]),
+  );
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -136,38 +141,6 @@ export default function QuotationsPage() {
     }
   };
 
-  const handleSubmitQuotation = async (id: number) => {
-    if (!confirm("ต้องการส่งใบเสนอราคานี้ให้ลูกค้าใช่หรือไม่?")) return;
-    try {
-      await quotationApi.submitQuotation(id);
-      fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการส่งใบเสนอราคา");
-      }
-    }
-  };
-
-  const handleApprove = async (id: number, currentStatus: string) => {
-    if (!confirm("ต้องการตอบรับ/อนุมัติใบเสนอราคานี้ใช่หรือไม่?")) return;
-    try {
-      // Backend requires draft -> pending -> approved
-      if (currentStatus === "draft") {
-        await quotationApi.submitQuotation(id);
-      }
-      await quotationApi.approveQuotation(id);
-      fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการอนุมัติใบเสนอราคา");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -194,6 +167,7 @@ export default function QuotationsPage() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={quotations.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -203,13 +177,20 @@ export default function QuotationsPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ลูกค้า</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวม</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {quotations.map(qt => (
+            {visible.map((qt) => (
               <tr key={qt.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{qt.qt_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/sales/quotations/${qt.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {qt.qt_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{new Date(qt.qt_date).toLocaleDateString("th-TH")}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{qt.customer?.name || qt.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">{Number(qt.total_amount).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
@@ -234,45 +215,15 @@ export default function QuotationsPage() {
                       : qt.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {qt.status === 'draft' && (
-                    <>
-                      <button
-                        onClick={() => handleSubmitQuotation(qt.id)}
-                        className="text-amber-600 hover:text-amber-900 mr-3"
-                      >
-                        ส่งให้ลูกค้า
-                      </button>
-                      <button
-                        onClick={() => handleApprove(qt.id, qt.status)}
-                        className="text-green-600 hover:text-green-900 mr-3"
-                      >
-                        อนุมัติ
-                      </button>
-                    </>
-                  )}
-                  {qt.status === 'pending' && (
-                    <button
-                      onClick={() => handleApprove(qt.id, qt.status)}
-                      className="text-green-600 hover:text-green-900 mr-3"
-                    >
-                      ลูกค้าตอบรับ (อนุมัติ)
-                    </button>
-                  )}
-                  {qt.status === 'approved' && (
-                    <button
-                      onClick={() => router.push(`/sales/sales-orders?ref_qt=${qt.id}`)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      สร้างใบสั่งขาย
-                    </button>
-                  )}
-                </td>
               </tr>
             ))}
-            {quotations.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">ไม่มีข้อมูลใบเสนอราคา</td>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {quotations.length === 0
+                    ? "ไม่มีข้อมูลใบเสนอราคา"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
+                </td>
               </tr>
             )}
           </tbody>

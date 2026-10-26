@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { supplierBillApi, goodsReceiptApi, purchaseOrderApi } from "@/lib/api/purchasing";
 import { supplierApi, productApi, accountApi } from "@/lib/api/masterdata";
 import type { SupplierBill, GoodsReceipt, Supplier, Product, Account, CreateSupplierBillRequest } from "@/types";
@@ -17,6 +20,10 @@ function BillsContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = bills.filter((bill) =>
+    matchesSearch(query, [bill.bill_no, bill.supplier_ref, bill.supplier?.name, statusLabel(bill.status), fmtDateShort(bill.bill_date), bill.total_amount]),
+  );
 
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -213,20 +220,6 @@ function BillsContent() {
     }
   };
 
-  const handlePost = async (id: number) => {
-    if (!confirm("ต้องการบันทึกบัญชี (Post) ใบตั้งหนี้นี้ใช่หรือไม่?")) return;
-    try {
-      await supplierBillApi.postBill(id);
-      await fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("เกิดข้อผิดพลาดในการบันทึกบัญชี");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -255,6 +248,7 @@ function BillsContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={bills.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -264,13 +258,20 @@ function BillsContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">เลขที่อ้างอิงผู้ขาย</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวม</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {bills.map((bill) => (
+            {visible.map((bill) => (
               <tr key={bill.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{bill.bill_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/purchasing/bills/${bill.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {bill.bill_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                   {bill.supplier?.name || `Supplier #${bill.supplier_id}`}
                 </td>
@@ -289,30 +290,14 @@ function BillsContent() {
                     {bill.status === "draft" ? "ร่าง" : bill.status === "posted" ? "บันทึกบัญชีแล้ว" : bill.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {bill.status === "draft" && (
-                    <button
-                      onClick={() => handlePost(bill.id)}
-                      className="text-green-600 hover:text-green-900 mr-4"
-                    >
-                      บันทึกบัญชี (Post)
-                    </button>
-                  )}
-                  {bill.status === "posted" && (
-                    <button
-                      onClick={() => router.push(`/purchasing/payments?ref_bill=${bill.id}`)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      สร้างใบจ่ายเงิน 
-                    </button>
-                  )}
-                </td>
               </tr>
             ))}
-            {bills.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                  ไม่มีข้อมูลใบตั้งหนี้
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {bills.length === 0
+                    ? "ไม่มีข้อมูลใบตั้งหนี้"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
                 </td>
               </tr>
             )}

@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { salesOrderApi, quotationApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
 import type { SalesOrder, Quotation, Customer, Product, CreateSalesOrderRequest } from "@/types";
@@ -16,6 +19,10 @@ function SalesOrdersContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query } = useSearch();
+  const visible = salesOrders.filter((so) =>
+    matchesSearch(query, [so.so_no, so.quotation?.qt_no, so.customer?.name, statusLabel(so.status), fmtDateShort(so.so_date), so.total_amount, so.note]),
+  );
   
   const [userId, setUserId] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,34 +177,6 @@ function SalesOrdersContent() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    if (!confirm("คุณต้องการอนุมัติใบสั่งขายนี้ใช่หรือไม่?")) return;
-    try {
-      await salesOrderApi.approveSalesOrder(id);
-      fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("อนุมัติใบสั่งขายไม่สำเร็จ");
-      }
-    }
-  };
-
-  const handleCancel = async (id: number) => {
-    if (!confirm("ต้องการยกเลิกใบสั่งขายนี้ใช่หรือไม่?")) return;
-    try {
-      await salesOrderApi.cancelSalesOrder(id);
-      fetchData();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
-      } else {
-        alert("ยกเลิกใบสั่งขายไม่สำเร็จ");
-      }
-    }
-  };
-
   if (loading) return <div className="p-8">กำลังโหลด...</div>;
 
   return (
@@ -224,6 +203,7 @@ function SalesOrdersContent() {
         </button>
       </div>
 
+      <SearchSummary query={query} shown={visible.length} total={salesOrders.length} />
       <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
@@ -233,13 +213,20 @@ function SalesOrdersContent() {
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ลูกค้า</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">ยอดรวม</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase">สถานะ</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {salesOrders.map(so => (
+            {visible.map((so) => (
               <tr key={so.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{so.so_no}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link
+                    href={`/sales/sales-orders/${so.id}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    title="ดูรายละเอียดเอกสาร"
+                  >
+                    {so.so_no}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{so.quotation?.qt_no || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{so.customer?.name || so.customer_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">{Number(so.total_amount).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
@@ -248,27 +235,15 @@ function SalesOrdersContent() {
                     {so.status === 'draft' ? 'ร่าง' : so.status === 'approved' ? 'อนุมัติแล้ว' : so.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {so.status === 'draft' && (
-                    <>
-                      <button onClick={() => handleApprove(so.id)} className="text-green-600 hover:text-green-900 mr-4">อนุมัติ</button>
-                      <button onClick={() => handleCancel(so.id)} className="text-red-500 hover:text-red-700 mr-2">ยกเลิก</button>
-                    </>
-                  )}
-                  {so.status === 'approved' && (
-                    <button onClick={() => {
-                      router.push(`/sales/shipments?ref_so=${so.id}`);
-                    }} className="text-blue-600 hover:text-blue-900">สร้างใบส่งของ</button>
-                  )}
-                  {so.status === 'cancelled' && (
-                    <span className="text-slate-400">ยกเลิกแล้ว</span>
-                  )}
-                </td>
               </tr>
             ))}
-            {salesOrders.length === 0 && (
+            {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">ไม่มีข้อมูลใบสั่งขาย</td>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  {salesOrders.length === 0
+                    ? "ไม่มีข้อมูลใบสั่งขาย"
+                    : `ไม่พบรายการที่ตรงกับ “${query.trim()}”`}
+                </td>
               </tr>
             )}
           </tbody>
