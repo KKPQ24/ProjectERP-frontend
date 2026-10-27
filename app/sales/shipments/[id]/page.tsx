@@ -30,7 +30,7 @@ const config: DocConfig<Shipment> = {
       {
         label: "อ้างอิงใบสั่งขาย",
         value: d.so_id ? (
-          <Link href={`/sales/sales-orders/${d.so_id}`} className="text-blue-600 hover:underline">
+          <Link href={`/sales/sales-orders/${d.so_id}`} className="text-brand-600 hover:underline">
             {d.sales_order?.so_no ?? `#${d.so_id}`}
           </Link>
         ) : (

@@ -5,6 +5,9 @@ import type { FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
+import { useAuth } from "@/components/AuthProvider";
+import { fetchIfAllowed, isSessionCurrent } from "@/lib/access";
+import { getStoredToken } from "@/lib/api/client";
 import { useSearch } from "@/components/SearchContext";
 import {
   goodsReceiptApi,
@@ -79,20 +82,21 @@ function createDocumentResults<T extends { id: number; status: string }>(
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
   // คำค้นหาใช้ร่วมกับหน้ารายการ: พิมพ์แล้วตารางในหน้านั้นกรองทันที
   // (ปุ่ม "ค้นหา"/Enter ยังค้นข้ามทุกเอกสารเหมือนเดิม)
   const { query: searchQuery, setQuery: setSearchQuery } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [searchResults, setSearchResults] = useState<DocumentSearchResult[] | null>(null);
+  const [searchState, setSearchState] = useState<{
+    path: string;
+    token: string;
+    results: DocumentSearchResult[];
+  } | null>(null);
+  const searchResults = user && searchState && isSessionCurrent(searchState, pathname, getStoredToken())
+    ? searchState.results : null;
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-
-  useEffect(() => {
-    import("@/lib/api/client").then(({ getStoredToken }) => {
-      setIsLoggedIn(!!getStoredToken());
-    });
-  }, [pathname]);
 
   // กด "/" ที่ไหนก็ได้ในหน้า เพื่อกระโดดไปที่ช่องค้นหา
   useEffect(() => {
@@ -114,7 +118,9 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       authApi.logout();
-      setIsLoggedIn(false);
+      setSearchState(null);
+      setSearchError(null);
+      setSearchQuery("");
       router.push("/auth/login");
       router.refresh();
     } catch (err) {
@@ -125,11 +131,13 @@ export default function Header() {
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const query = searchQuery.trim().toLocaleLowerCase();
-    if (!query || isSearching) return;
+    if (!user || !query || isSearching) return;
+    const requestToken = getStoredToken();
+    if (!requestToken) return;
 
     setIsSearching(true);
     setSearchError(null);
-    setSearchResults(null);
+    setSearchState(null);
 
     try {
       const [
@@ -144,16 +152,16 @@ export default function Header() {
         bills,
         payments,
       ] = await Promise.all([
-        quotationApi.getQuotations(),
-        salesOrderApi.getSalesOrders(),
-        shipmentApi.getShipments(),
-        invoiceApi.getInvoices(),
-        receiptApi.getReceipts(),
-        purchaseRequisitionApi.getPRs(),
-        purchaseOrderApi.getPOs(),
-        goodsReceiptApi.getGoodsReceipts(),
-        supplierBillApi.getBills(),
-        paymentApi.getPayments(),
+        fetchIfAllowed("/sales/quotations", user.roles ?? [], () => quotationApi.getQuotations()),
+        fetchIfAllowed("/sales/sales-orders", user.roles ?? [], () => salesOrderApi.getSalesOrders()),
+        fetchIfAllowed("/sales/shipments", user.roles ?? [], () => shipmentApi.getShipments()),
+        fetchIfAllowed("/sales/invoices", user.roles ?? [], () => invoiceApi.getInvoices()),
+        fetchIfAllowed("/sales/receipts", user.roles ?? [], () => receiptApi.getReceipts()),
+        fetchIfAllowed("/purchasing/purchase-requisitions", user.roles ?? [], () => purchaseRequisitionApi.getPRs()),
+        fetchIfAllowed("/purchasing/purchase-orders", user.roles ?? [], () => purchaseOrderApi.getPOs()),
+        fetchIfAllowed("/purchasing/goods-receipts", user.roles ?? [], () => goodsReceiptApi.getGoodsReceipts()),
+        fetchIfAllowed("/purchasing/bills", user.roles ?? [], () => supplierBillApi.getBills()),
+        fetchIfAllowed("/purchasing/payments", user.roles ?? [], () => paymentApi.getPayments()),
       ]);
 
       const documents = [
@@ -229,11 +237,14 @@ export default function Header() {
         }),
       ];
 
-      setSearchResults(
-        documents
+      if (getStoredToken() !== requestToken) return;
+      setSearchState({
+        path: pathname,
+        token: requestToken,
+        results: documents
           .filter((document) => document.searchableText.includes(query))
-          .slice(0, 10)
-      );
+          .slice(0, 10),
+      });
     } catch (err) {
       setSearchError(
         err instanceof Error
@@ -246,16 +257,17 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex min-h-[76px] w-full shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-nowrap sm:pl-16 sm:pr-6 lg:px-8">
+      <span className="order-1 flex min-h-11 items-center pl-12 text-sm font-semibold text-slate-800 sm:hidden">ระบบ ERP</span>
       {/* Search */}
-      <div className="flex flex-1 items-center">
+      <div className="order-3 flex w-full min-w-0 items-center sm:order-1 sm:w-auto sm:flex-1">
         <form role="search" className="relative w-full max-w-xl" onSubmit={handleSearch}>
           <label htmlFor="search-field" className="sr-only">
             ค้นหาเอกสาร เลขที่เอกสาร หรือลูกค้า/ผู้ขาย
           </label>
           <div className="group relative">
             <svg
-              className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
+              className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-brand-600"
               viewBox="0 0 20 20"
               fill="currentColor"
               aria-hidden="true"
@@ -265,8 +277,8 @@ export default function Header() {
             <input
               ref={searchInputRef}
               id="search-field"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-32 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
-              placeholder="ค้นหาเลขที่เอกสาร ชื่อ หรือรหัส..."
+              className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-24 text-sm text-slate-900 outline-none placeholder:text-slate-500 hover:border-slate-300 focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-100"
+              placeholder="ค้นหาเอกสารหรือรหัส..."
               type="text"
               inputMode="search"
               autoComplete="off"
@@ -274,13 +286,13 @@ export default function Header() {
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
-                setSearchResults(null);
+                setSearchState(null);
                 setSearchError(null);
               }}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   setSearchQuery("");
-                  setSearchResults(null);
+                  setSearchState(null);
                   setSearchError(null);
                   event.currentTarget.blur();
                 }
@@ -293,7 +305,7 @@ export default function Header() {
                   type="button"
                   onClick={() => {
                     setSearchQuery("");
-                    setSearchResults(null);
+                    setSearchState(null);
                     setSearchError(null);
                     searchInputRef.current?.focus();
                   }}
@@ -307,8 +319,8 @@ export default function Header() {
               )}
               <button
                 type="submit"
-                className="rounded-lg px-3 py-1 text-sm font-medium text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
-                disabled={isSearching || !searchQuery.trim()}
+                className="rounded-lg px-3 py-1 text-sm font-medium text-brand-700 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:hover:bg-transparent"
+                disabled={isSearching || !searchQuery.trim() || !user}
               >
                 ค้นหา
               </button>
@@ -335,7 +347,7 @@ export default function Header() {
                   <Link
                     key={`${result.documentType}-${result.id}`}
                     href={result.href}
-                    onClick={() => setSearchResults(null)}
+                    onClick={() => setSearchState(null)}
                     className="block px-4 py-3 hover:bg-slate-50"
                   >
                     <span className="flex items-center justify-between gap-3">
@@ -357,28 +369,30 @@ export default function Header() {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-x-4 lg:gap-x-6">
+      <div className="order-2 flex shrink-0 items-center gap-3 lg:gap-5">
         {isLoggedIn ? (
           <>
-            <Link href="/auth/profile" className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-slate-900 hover:text-slate-700">
-              <span className="flex flex-col text-right">
-                <span>ผู้ดูแลระบบ</span>
-                <span className="text-xs font-normal text-slate-500">ผู้ดูแลระบบ</span>
+            <Link href="/auth/profile" aria-label="ดูโปรไฟล์" className="flex min-h-10 items-center gap-2 rounded-md px-2 text-sm font-medium text-slate-700 hover:text-brand-700">
+              <svg className="h-5 w-5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 21v-2a7 7 0 0114 0v2" /></svg>
+              <span className="hidden flex-col text-right sm:flex">
+                <span>{user?.username}</span>
+                <span className="text-[11px] font-normal text-slate-500">{user?.roles?.join(" / ")}</span>
               </span>
             </Link>
-            <div className="h-6 w-px bg-slate-200" aria-hidden="true"></div>
+            <div className="hidden h-6 w-px bg-slate-200 sm:block" aria-hidden="true"></div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-x-2 text-sm font-medium leading-6 text-slate-600 hover:text-slate-900"
+              aria-label="ออกจากระบบ"
+              className="flex min-h-10 items-center gap-2 rounded-md px-2 text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             >
-              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
               </svg>
-              ออกจากระบบ
+              <span className="hidden md:inline">ออกจากระบบ</span>
             </button>
           </>
         ) : (
-          <Link href="/auth/login" className="text-sm font-semibold leading-6 text-slate-900">
+          <Link href="/auth/login" className="whitespace-nowrap text-xs font-medium text-brand-700 sm:text-sm">
             เข้าสู่ระบบ <span aria-hidden="true">&rarr;</span>
           </Link>
         )}

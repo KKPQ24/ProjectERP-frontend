@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { purchaseOrderApi, purchaseRequisitionApi } from "@/lib/api/purchasing";
 import { supplierApi, productApi } from "@/lib/api/masterdata";
@@ -19,7 +20,7 @@ function PurchaseOrdersContent() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = pos.filter((po) =>
     matchesSearch(query, [po.po_no, po.purchase_requisition?.pr_no, po.supplier?.name, statusLabel(po.status), fmtDateShort(po.po_date), po.total_amount, po.note]),
   );
@@ -189,10 +190,9 @@ function PurchaseOrdersContent() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบสั่งซื้อ</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการสั่งซื้อสินค้ากับผู้ขาย</p>
         </div>
         <button
           onClick={() => {
@@ -205,14 +205,14 @@ function PurchaseOrdersContent() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบสั่งซื้อ
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={pos.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบสั่งซื้อ" value={query} onChange={setQuery} shown={visible.length} total={pos.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -229,7 +229,7 @@ function PurchaseOrdersContent() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/purchasing/purchase-orders/${po.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {po.po_no}
@@ -287,7 +287,7 @@ function PurchaseOrdersContent() {
               <button
                 disabled={submitting}
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-2xl"
+                className="text-slate-500 hover:text-slate-600 text-2xl"
               >
                 &times;
               </button>
@@ -295,14 +295,14 @@ function PurchaseOrdersContent() {
 
             <div className="p-6 overflow-y-auto flex-1">
               <form id="po-form" onSubmit={handleSubmit}>
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6">
-                  <label className="block text-sm font-semibold text-blue-800 mb-1">
+                <div className="bg-brand-50 border border-brand-100 p-4 rounded-md mb-6">
+                  <label className="block text-sm font-semibold text-brand-800 mb-1">
                     ดึงข้อมูลอ้างอิงจากใบขอซื้อ (Purchase Requisition - PR)
                   </label>
                   <select
                     value={formData.pr_id}
                     onChange={(e) => handleSelectPR(e.target.value, products)}
-                    className="w-full border-blue-200 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3"
+                    className="w-full border-brand-200 bg-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3"
                   >
                     <option value="">-- ไม่ระบุอ้างอิง (สร้างใหม่) --</option>
                     {prs.map((pr) => (
@@ -320,7 +320,7 @@ function PurchaseOrdersContent() {
                       required
                       value={formData.supplier_id}
                       onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     >
                       <option value="">-- เลือกผู้ขาย --</option>
                       {suppliers.map((s) => (
@@ -337,7 +337,7 @@ function PurchaseOrdersContent() {
                       required
                       value={formData.po_date}
                       onChange={(e) => setFormData({ ...formData, po_date: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div className="col-span-2">
@@ -347,7 +347,7 @@ function PurchaseOrdersContent() {
                       placeholder="เช่น เงื่อนไขการจัดส่งหรือเครดิตเทอม"
                       value={formData.note}
                       onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -357,7 +357,7 @@ function PurchaseOrdersContent() {
                   <button
                     type="button"
                     onClick={handleAddLine}
-                    className="text-sm text-blue-600 font-medium hover:text-blue-800"
+                    className="text-sm text-brand-600 font-medium hover:text-brand-800"
                   >
                     + เพิ่มรายการ
                   </button>
@@ -381,7 +381,7 @@ function PurchaseOrdersContent() {
                             required
                             value={line.product_id}
                             onChange={(e) => handleLineChange(idx, "product_id", e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map((p) => (
@@ -441,7 +441,7 @@ function PurchaseOrdersContent() {
                     </div>
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base">
                       <span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span>
-                      <span className="font-bold text-blue-700">{total.toLocaleString("th-TH")}</span>
+                      <span className="font-bold text-brand-700">{total.toLocaleString("th-TH")}</span>
                     </div>
                   </div>
                 </div>
@@ -461,7 +461,7 @@ function PurchaseOrdersContent() {
                 type="submit"
                 form="po-form"
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

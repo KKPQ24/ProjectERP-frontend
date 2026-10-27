@@ -1,37 +1,86 @@
 @import "tailwindcss";
 
+@theme inline {
+  --font-sans: var(--font-erp), "Tahoma", sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  --color-brand-50: #eff4fb;
+  --color-brand-100: #e0e9f6;
+  --color-brand-200: #c2d3ec;
+  --color-brand-300: #9bb6df;
+  --color-brand-400: #6e94ca;
+  --color-brand-500: #4976b4;
+  --color-brand-600: #2d5698;
+  --color-brand-700: #244582;
+  --color-brand-800: #203b6c;
+  --color-brand-900: #1d3259;
+  --color-brand-950: #14223d;
+  --color-slate-50: #f1f5f9;
+  --color-slate-100: #eaf0f6;
+  --color-slate-200: #dce4ee;
+  --color-slate-300: #c1cfe0;
+  --color-slate-400: #8191a7;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 5%);
+}
+
 :root {
-  --background: #f8fafc;
+  color-scheme: light;
+  --background: #f1f5f9;
   --foreground: #0f172a;
 }
 
-/* @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-} */
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-
-
-/* ---- พิมพ์เอกสาร (components/doc/DocumentDetail) ---- */
-@page {
-  size: A4;
-  margin: 15mm;
-}
-
-@media print {
-  /* ซ่อนทุกอย่างในหน้าเว็บ ยกเว้นใบเอกสารที่กำลังพิมพ์ */
-  body > *:not(#print-root) {
-    display: none !important;
-  }
+@layer base {
   body {
-    background: #fff !important;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-erp), "Tahoma", sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
   }
+  h1, h2, h3 { text-wrap: balance; }
+  h1 { letter-spacing: -0.025em; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), select:not(:disabled) { cursor: pointer; }
+  button, a, input, select, textarea { transition: color 120ms, background-color 120ms, border-color 120ms; }
+  :focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 3px; }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea {
+    min-height: 40px;
+    border-radius: 6px;
+    background-color: white;
+  }
+  input:disabled, select:disabled, textarea:disabled { background-color: var(--color-slate-50); cursor: not-allowed; }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--color-brand-600); }
+  ::selection { background: var(--color-brand-100); color: var(--color-brand-900); }
+  table { font-variant-numeric: tabular-nums; }
+  thead th { white-space: nowrap; font-weight: 500; }
+  tbody tr { transition: background-color 120ms; }
+  tbody tr:hover { background-color: var(--color-slate-50); }
+  td { vertical-align: middle; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+  }
+}
+
+@layer components {
+  .erp-panel { overflow: hidden; border: 1px solid var(--color-slate-200); border-radius: 8px; background: white; }
+  .erp-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--color-slate-200); }
+  .erp-dashboard-panel { max-height: 400px; }
+  .erp-dashboard-panel > .erp-panel-heading { min-height: 72px; }
+  @media (min-width: 87.5rem) {
+    .erp-dashboard-panel { height: 400px; }
+  }
+  .erp-page { margin-inline: auto; max-width: 1440px; }
+}
+
+/* เอกสารพิมพ์ใช้รูปแบบ A4 เดิม */
+@page { size: A4; margin: 15mm; }
+@media print {
+  body > *:not(#print-root) { display: none !important; }
+  body { background: #fff !important; }
 }

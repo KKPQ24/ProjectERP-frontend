@@ -2,7 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
+import { useAuth } from "@/components/AuthProvider";
+import { canAccessPath, fetchIfAllowed } from "@/lib/access";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { receiptApi, invoiceApi } from "@/lib/api/sales";
 import { customerApi, accountApi } from "@/lib/api/masterdata";
@@ -12,6 +15,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 function ReceiptsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user: sessionUser } = useAuth();
+  const canSelectAccount = canAccessPath("/masterdata/accounts", sessionUser?.roles ?? []);
   const refInvId = searchParams.get('ref_inv');
   
   const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -19,7 +24,7 @@ function ReceiptsContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = receipts.filter((rec) =>
     matchesSearch(query, [rec.receipt_no, rec.customer?.name, statusLabel(rec.status), fmtDateShort(rec.receipt_date), rec.amount, rec.note]),
   );
@@ -55,7 +60,7 @@ function ReceiptsContent() {
         receiptApi.getReceipts(),
         invoiceApi.getInvoices(),
         customerApi.getCustomers(),
-        accountApi.getAccounts(),
+        fetchIfAllowed("/masterdata/accounts", sessionUser?.roles ?? [], () => accountApi.getAccounts()),
       ]);
       setReceipts(recData);
       setInvoices(invData.filter(inv => inv.status === 'posted'));
@@ -69,7 +74,7 @@ function ReceiptsContent() {
         console.error("Failed to fetch current user", e);
       }
       
-      if (refInvId && !isModalOpen) {
+      if (refInvId && !isModalOpen && canSelectAccount) {
         handleSelectInvoice(refInvId, invData);
         setIsModalOpen(true);
       }
@@ -150,12 +155,13 @@ function ReceiptsContent() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบรับเงิน</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการรับชำระเงินจากลูกค้า</p>
         </div>
         <button
+          disabled={!canSelectAccount}
+          title={canSelectAccount ? undefined : "ต้องมีสิทธิ์บัญชีเพื่อเลือกบัญชีรับ/จ่ายเงิน"}
           onClick={() => {
             setFormData({
               receipt_date: new Date().toISOString().split("T")[0],
@@ -168,14 +174,16 @@ function ReceiptsContent() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           + สร้างใบรับเงิน
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={receipts.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      {!canSelectAccount && <p className="mb-4 text-xs text-slate-500">ต้องมีสิทธิ์บัญชีเพื่อเลือกบัญชีรับ/จ่ายเงิน</p>}
+
+      <DocumentSearch label="ค้นหาใบรับเงิน" value={query} onChange={setQuery} shown={visible.length} total={receipts.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -192,7 +200,7 @@ function ReceiptsContent() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/sales/receipts/${rec.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {rec.receipt_no}
@@ -226,19 +234,19 @@ function ReceiptsContent() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">สร้างใบรับเงินใหม่</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-600">&times;</button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1">
               <form id="rec-form" onSubmit={handleSubmit}>
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6 flex gap-4 items-end">
+                <div className="bg-brand-50 border border-brand-100 p-4 rounded-md mb-6 flex gap-4 items-end">
                   <div className="flex-1">
-                    <label className="block text-sm font-semibold text-blue-800 mb-1">
+                    <label className="block text-sm font-semibold text-brand-800 mb-1">
                       ดึงข้อมูลอ้างอิงจากใบแจ้งหนี้ (Invoice)
                     </label>
                     <select 
                       onChange={e => handleSelectInvoice(e.target.value)}
-                      className="w-full border-blue-200 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3"
+                      className="w-full border-brand-200 bg-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3"
                     >
                       <option value="">-- เลือกใบแจ้งหนี้เพื่อตัดจ่าย --</option>
                       {invoices.map(inv => (
@@ -257,7 +265,7 @@ function ReceiptsContent() {
                       required 
                       value={formData.customer_id} 
                       onChange={e => setFormData({...formData, customer_id: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     >
                       <option value="">-- เลือกลูกค้า --</option>
                       {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -270,7 +278,7 @@ function ReceiptsContent() {
                       required 
                       value={formData.receipt_date} 
                       onChange={e => setFormData({...formData, receipt_date: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   
@@ -280,7 +288,7 @@ function ReceiptsContent() {
                       required 
                       value={formData.cash_account_id} 
                       onChange={e => setFormData({...formData, cash_account_id: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     >
                       <option value="">-- เลือกบัญชี --</option>
                       {accounts.map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
@@ -294,7 +302,7 @@ function ReceiptsContent() {
                         required 
                         value={formData.method} 
                         onChange={e => setFormData({...formData, method: e.target.value as PayMethod})}
-                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                       >
                         <option value="cash">เงินสด</option>
                         <option value="transfer">โอนเงิน</option>
@@ -307,7 +315,7 @@ function ReceiptsContent() {
                         type="number" step="0.01" min="0" required 
                         value={formData.amount} 
                         onChange={e => setFormData({...formData, amount: Number(e.target.value)})}
-                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-right"
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-right"
                       />
                     </div>
                   </div>
@@ -363,7 +371,7 @@ function ReceiptsContent() {
                 type="submit" 
                 form="rec-form" 
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

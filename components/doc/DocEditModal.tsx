@@ -60,7 +60,7 @@ interface Props {
 const VAT_RATE = 0.07;
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const INPUT =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
 
 export default function DocEditModal({
   title,
@@ -178,7 +178,7 @@ export default function DocEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-xl leading-none text-slate-400 hover:text-slate-600"
+            className="text-xl leading-none text-slate-500 hover:text-slate-600"
             aria-label="ปิด"
           >
             &times;
@@ -251,7 +251,7 @@ export default function DocEditModal({
                         { product_id: "", qty: 1, unit_price: 0, note: "" },
                       ])
                     }
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    className="text-sm font-medium text-brand-600 hover:text-brand-800"
                   >
                     + เพิ่มรายการ
                   </button>
@@ -368,7 +368,7 @@ export default function DocEditModal({
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {saving ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
               </button>

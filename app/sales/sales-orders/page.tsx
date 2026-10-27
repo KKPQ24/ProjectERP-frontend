@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { salesOrderApi, quotationApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
@@ -19,7 +20,7 @@ function SalesOrdersContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = salesOrders.filter((so) =>
     matchesSearch(query, [so.so_no, so.quotation?.qt_no, so.customer?.name, statusLabel(so.status), fmtDateShort(so.so_date), so.total_amount, so.note]),
   );
@@ -181,10 +182,9 @@ function SalesOrdersContent() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบสั่งขาย</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบสั่งขายเพื่อเตรียมจัดส่งสินค้า</p>
         </div>
         <button
           onClick={() => {
@@ -197,14 +197,14 @@ function SalesOrdersContent() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบสั่งขาย
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={salesOrders.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบสั่งขาย" value={query} onChange={setQuery} shown={visible.length} total={salesOrders.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -221,7 +221,7 @@ function SalesOrdersContent() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/sales/sales-orders/${so.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {so.so_no}
@@ -255,19 +255,19 @@ function SalesOrdersContent() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">สร้างใบสั่งขายใหม่</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-600">&times;</button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1">
               <form id="so-form" onSubmit={handleSubmit}>
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6">
-                  <label className="block text-sm font-semibold text-blue-800 mb-1">
+                <div className="bg-brand-50 border border-brand-100 p-4 rounded-md mb-6">
+                  <label className="block text-sm font-semibold text-brand-800 mb-1">
                     ดึงข้อมูลอ้างอิงจากใบเสนอราคา (Quotation)
                   </label>
                   <select 
                     value={formData.qt_id} 
                     onChange={e => handleSelectQuotation(e.target.value)}
-                    className="w-full border-blue-200 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3"
+                    className="w-full border-brand-200 bg-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3"
                   >
                     <option value="">-- ไม่ระบุอ้างอิง (สร้างใหม่) --</option>
                     {quotations.map(qt => (
@@ -285,7 +285,7 @@ function SalesOrdersContent() {
                       required 
                       value={formData.customer_id} 
                       onChange={e => setFormData({...formData, customer_id: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 disabled:bg-slate-100"
                       disabled={!!formData.qt_id} // If referenced QT, should not change customer easily
                     >
                       <option value="">-- เลือกลูกค้า --</option>
@@ -299,7 +299,7 @@ function SalesOrdersContent() {
                       required 
                       value={formData.so_date} 
                       onChange={e => setFormData({...formData, so_date: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div className="col-span-2">
@@ -308,14 +308,14 @@ function SalesOrdersContent() {
                       type="text" 
                       value={formData.note} 
                       onChange={e => setFormData({...formData, note: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                 </div>
 
                 <div className="mb-4 flex justify-between items-end">
                   <h3 className="text-md font-semibold text-slate-800">รายการสินค้า</h3>
-                  <button type="button" onClick={handleAddLine} className="text-sm text-blue-600 font-medium hover:text-blue-800">
+                  <button type="button" onClick={handleAddLine} className="text-sm text-brand-600 font-medium hover:text-brand-800">
                     + เพิ่มรายการ
                   </button>
                 </div>
@@ -338,7 +338,7 @@ function SalesOrdersContent() {
                             required 
                             value={line.product_id} 
                             onChange={e => handleLineChange(idx, 'product_id', e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map(p => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
@@ -375,7 +375,7 @@ function SalesOrdersContent() {
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-brand-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>
               </form>
@@ -394,7 +394,7 @@ function SalesOrdersContent() {
                 type="submit" 
                 form="so-form" 
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

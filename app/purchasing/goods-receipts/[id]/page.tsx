@@ -47,7 +47,7 @@ const config: DocConfig<GoodsReceipt> = {
           value: d.po_id ? (
             <Link
               href={`/purchasing/purchase-orders/${d.po_id}`}
-              className="text-blue-600 hover:underline"
+              className="text-brand-600 hover:underline"
             >
               {d.purchase_order?.po_no ?? `#${d.po_id}`}
             </Link>

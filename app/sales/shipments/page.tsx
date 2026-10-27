@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { shipmentApi, salesOrderApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
@@ -19,7 +20,7 @@ function ShipmentsContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = shipments.filter((sh) =>
     matchesSearch(query, [sh.sh_no, sh.sales_order?.so_no, sh.customer?.name, statusLabel(sh.status), fmtDateShort(sh.sh_date), sh.note]),
   );
@@ -164,10 +165,9 @@ function ShipmentsContent() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบส่งของ</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลการจัดส่งสินค้าให้ลูกค้า</p>
         </div>
         <button
           onClick={() => {
@@ -180,14 +180,14 @@ function ShipmentsContent() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบส่งของ
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={shipments.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบส่งของ" value={query} onChange={setQuery} shown={visible.length} total={shipments.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -203,7 +203,7 @@ function ShipmentsContent() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/sales/shipments/${sh.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {sh.sh_no}
@@ -236,19 +236,19 @@ function ShipmentsContent() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">สร้างใบส่งของใหม่</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-600">&times;</button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1">
               <form id="sh-form" onSubmit={handleSubmit}>
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6">
-                  <label className="block text-sm font-semibold text-blue-800 mb-1">
+                <div className="bg-brand-50 border border-brand-100 p-4 rounded-md mb-6">
+                  <label className="block text-sm font-semibold text-brand-800 mb-1">
                     ดึงข้อมูลอ้างอิงจากใบสั่งขาย (Sales Order)
                   </label>
                   <select 
                     value={formData.so_id} 
                     onChange={e => handleSelectSO(e.target.value)}
-                    className="w-full border-blue-200 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3"
+                    className="w-full border-brand-200 bg-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3"
                   >
                     <option value="">-- ไม่ระบุอ้างอิง (สร้างใหม่) --</option>
                     {salesOrders.map(so => (
@@ -266,7 +266,7 @@ function ShipmentsContent() {
                       required 
                       value={formData.customer_id} 
                       onChange={e => setFormData({...formData, customer_id: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 disabled:bg-slate-100"
                       disabled={!!formData.so_id}
                     >
                       <option value="">-- เลือกลูกค้า --</option>
@@ -280,7 +280,7 @@ function ShipmentsContent() {
                       required 
                       value={formData.sh_date} 
                       onChange={e => setFormData({...formData, sh_date: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div className="col-span-2">
@@ -289,14 +289,14 @@ function ShipmentsContent() {
                       type="text" 
                       value={formData.note} 
                       onChange={e => setFormData({...formData, note: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                 </div>
 
                 <div className="mb-4 flex justify-between items-end">
                   <h3 className="text-md font-semibold text-slate-800">รายการสินค้าจัดส่ง</h3>
-                  <button type="button" onClick={handleAddLine} className="text-sm text-blue-600 font-medium hover:text-blue-800">
+                  <button type="button" onClick={handleAddLine} className="text-sm text-brand-600 font-medium hover:text-brand-800">
                     + เพิ่มรายการ
                   </button>
                 </div>
@@ -317,7 +317,7 @@ function ShipmentsContent() {
                             required 
                             value={line.product_id} 
                             onChange={e => handleLineChange(idx, 'product_id', e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map(p => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
@@ -354,7 +354,7 @@ function ShipmentsContent() {
                 type="submit" 
                 form="sh-form" 
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

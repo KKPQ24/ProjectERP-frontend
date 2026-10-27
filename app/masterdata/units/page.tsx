@@ -102,7 +102,7 @@ export default function UnitsPage() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
             หน่วยนับ
@@ -113,14 +113,14 @@ export default function UnitsPage() {
         </div>
         <button
           onClick={handleOpenNew}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + เพิ่มหน่วยนับ
         </button>
       </div>
 
       <SearchSummary query={query} shown={visible.length} total={units.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -166,7 +166,7 @@ export default function UnitsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleOpenEdit(unit)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-brand-600 hover:text-brand-900"
                     >
                       แก้ไข
                     </button>
@@ -193,7 +193,7 @@ export default function UnitsPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-500 hover:text-slate-600"
               >
                 &times;
               </button>
@@ -211,7 +211,7 @@ export default function UnitsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, code: e.target.value })
                     }
-                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                   />
                 </div>
                 <div>
@@ -225,7 +225,7 @@ export default function UnitsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                   />
                 </div>
 
@@ -239,7 +239,7 @@ export default function UnitsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                    className="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 font-medium"
                   >
                     บันทึก
                   </button>

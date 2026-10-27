@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import Link from "next/link";
+import AccessLink from "@/components/AccessLink";
 import { supplierBillApi } from "@/lib/api/purchasing";
 import type { SupplierBill, SupplierBillLine } from "@/types";
 import DocumentDetail, {
@@ -32,12 +32,12 @@ const config: DocConfig<SupplierBill> = {
       {
         label: "อ้างอิงใบสั่งซื้อ",
         value: d.po_id ? (
-          <Link
+          <AccessLink
             href={`/purchasing/purchase-orders/${d.po_id}`}
-            className="text-blue-600 hover:underline"
+            className="text-brand-600 hover:underline"
           >
             {d.purchase_order?.po_no ?? `#${d.po_id}`}
-          </Link>
+          </AccessLink>
         ) : (
           "-"
         ),
@@ -45,12 +45,12 @@ const config: DocConfig<SupplierBill> = {
       {
         label: "อ้างอิงใบรับของ",
         value: d.gr_id ? (
-          <Link
+          <AccessLink
             href={`/purchasing/goods-receipts/${d.gr_id}`}
-            className="text-blue-600 hover:underline"
+            className="text-brand-600 hover:underline"
           >
             {d.goods_receipt?.gr_no ?? `#${d.gr_id}`}
-          </Link>
+          </AccessLink>
         ) : (
           "-"
         ),

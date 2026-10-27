@@ -2,7 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
+import { useAuth } from "@/components/AuthProvider";
+import { canAccessPath, fetchIfAllowed } from "@/lib/access";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { supplierBillApi, goodsReceiptApi, purchaseOrderApi } from "@/lib/api/purchasing";
 import { supplierApi, productApi, accountApi } from "@/lib/api/masterdata";
@@ -12,6 +15,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 function BillsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user: sessionUser } = useAuth();
   const refGrId = searchParams.get("ref_gr");
 
   const [bills, setBills] = useState<SupplierBill[]>([]);
@@ -20,7 +24,7 @@ function BillsContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = bills.filter((bill) =>
     matchesSearch(query, [bill.bill_no, bill.supplier_ref, bill.supplier?.name, statusLabel(bill.status), fmtDateShort(bill.bill_date), bill.total_amount]),
   );
@@ -54,10 +58,10 @@ function BillsContent() {
 
       const [billData, grData, supData, prodData, accData] = await Promise.all([
         supplierBillApi.getBills(),
-        goodsReceiptApi.getGoodsReceipts(),
+        fetchIfAllowed("/purchasing/goods-receipts", sessionUser?.roles ?? [], () => goodsReceiptApi.getGoodsReceipts()),
         supplierApi.getSuppliers(),
         productApi.getProducts(),
-        accountApi.getAccounts(),
+        fetchIfAllowed("/masterdata/accounts", sessionUser?.roles ?? [], () => accountApi.getAccounts()),
       ]);
       setBills(billData);
       setGrs(grData.filter((gr) => gr.status === "posted"));
@@ -72,7 +76,7 @@ function BillsContent() {
         console.error("Failed to fetch user", e);
       }
 
-      if (refGrId && !isModalOpen) {
+      if (refGrId && !isModalOpen && canAccessPath("/purchasing/goods-receipts", sessionUser?.roles ?? [])) {
         await handleSelectGR(refGrId, prodData);
         setIsModalOpen(true);
       }
@@ -224,10 +228,9 @@ function BillsContent() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบตั้งหนี้</h1>
-          <p className="mt-2 text-sm text-slate-600">บันทึกใบแจ้งหนี้จากผู้ขายเพื่อตั้งหนี้เจ้าหนี้การค้า</p>
         </div>
         <button
           onClick={() => {
@@ -242,14 +245,14 @@ function BillsContent() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบตั้งหนี้
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={bills.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบตั้งหนี้" value={query} onChange={setQuery} shown={visible.length} total={bills.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -266,7 +269,7 @@ function BillsContent() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/purchasing/bills/${bill.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {bill.bill_no}
@@ -311,19 +314,19 @@ function BillsContent() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">สร้างใบตั้งหนี้ใหม่</h2>
-              <button disabled={submitting} onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+              <button disabled={submitting} onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-600 text-2xl">&times;</button>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1">
               <form id="bill-form" onSubmit={handleSubmit}>
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6">
-                  <label className="block text-sm font-semibold text-blue-800 mb-1">
+                <div className="bg-brand-50 border border-brand-100 p-4 rounded-md mb-6">
+                  <label className="block text-sm font-semibold text-brand-800 mb-1">
                     ดึงข้อมูลอ้างอิงจากใบรับของ (Goods Receipt - GR)
                   </label>
                   <select
                     value={formData.gr_id}
                     onChange={(e) => handleSelectGR(e.target.value, products)}
-                    className="w-full border-blue-200 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3"
+                    className="w-full border-brand-200 bg-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3"
                   >
                     <option value="">-- ไม่ระบุอ้างอิง (สร้างใหม่) --</option>
                     {grs.map((gr) => (
@@ -342,7 +345,7 @@ function BillsContent() {
                       value={formData.supplier_id}
                       onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })}
                       disabled={!!formData.gr_id}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 disabled:bg-slate-100"
                     >
                       <option value="">-- เลือกผู้ขาย --</option>
                       {suppliers.map((s) => (
@@ -357,7 +360,7 @@ function BillsContent() {
                       placeholder="เช่น INV-2026-0001"
                       value={formData.supplier_ref}
                       onChange={(e) => setFormData({ ...formData, supplier_ref: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div>
@@ -367,7 +370,7 @@ function BillsContent() {
                       required
                       value={formData.bill_date}
                       onChange={(e) => setFormData({ ...formData, bill_date: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div>
@@ -376,14 +379,14 @@ function BillsContent() {
                       type="date"
                       value={formData.due_date}
                       onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                 </div>
 
                 <div className="mb-4 flex justify-between items-end">
                   <h3 className="text-md font-semibold text-slate-800">รายการในใบตั้งหนี้</h3>
-                  <button type="button" onClick={handleAddLine} className="text-sm text-blue-600 font-medium hover:text-blue-800">+ เพิ่มรายการ</button>
+                  <button type="button" onClick={handleAddLine} className="text-sm text-brand-600 font-medium hover:text-brand-800">+ เพิ่มรายการ</button>
                 </div>
 
                 <table className="w-full border border-slate-200 mb-4 rounded-md overflow-hidden">
@@ -403,7 +406,7 @@ function BillsContent() {
                           <select
                             value={line.product_id}
                             onChange={(e) => handleLineChange(idx, "product_id", e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map((p) => (
@@ -442,7 +445,7 @@ function BillsContent() {
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString("th-TH")}</span></div>
                     <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString("th-TH")}</span></div>
-                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString("th-TH")}</span></div>
+                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-brand-700">{total.toLocaleString("th-TH")}</span></div>
                   </div>
                 </div>
               </form>
@@ -450,7 +453,7 @@ function BillsContent() {
 
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
               <button type="button" disabled={submitting} onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded hover:bg-slate-100 font-medium disabled:opacity-50">ยกเลิก</button>
-              <button type="submit" form="bill-form" disabled={submitting} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2">
+              <button type="submit" form="bill-form" disabled={submitting} className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2">
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

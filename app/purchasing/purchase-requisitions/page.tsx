@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { purchaseRequisitionApi } from "@/lib/api/purchasing";
 import { productApi } from "@/lib/api/masterdata";
@@ -12,7 +13,7 @@ export default function PurchaseRequisitionsPage() {
   const [prs, setPrs] = useState<PurchaseRequisition[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = prs.filter((pr) =>
     matchesSearch(query, [pr.pr_no, statusLabel(pr.status), fmtDateShort(pr.pr_date), pr.note]),
   );
@@ -119,10 +120,9 @@ export default function PurchaseRequisitionsPage() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบขอซื้อ</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลคำขอซื้อสินค้าภายในองค์กรเพื่อขออนุมัติจัดซื้อ</p>
         </div>
         <button
           onClick={() => {
@@ -133,14 +133,14 @@ export default function PurchaseRequisitionsPage() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบขอซื้อ
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={prs.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบขอซื้อ" value={query} onChange={setQuery} shown={visible.length} total={prs.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -157,7 +157,7 @@ export default function PurchaseRequisitionsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/purchasing/purchase-requisitions/${pr.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {pr.pr_no}
@@ -174,7 +174,7 @@ export default function PurchaseRequisitionsPage() {
                       pr.status === "approved"
                         ? "bg-green-100 text-green-800"
                         : pr.status === "pending"
-                        ? "bg-blue-100 text-blue-800"
+                        ? "bg-brand-100 text-brand-800"
                         : pr.status === "cancelled"
                         ? "bg-red-100 text-red-800"
                         : "bg-yellow-100 text-yellow-800"
@@ -215,7 +215,7 @@ export default function PurchaseRequisitionsPage() {
               <button
                 disabled={submitting}
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-2xl"
+                className="text-slate-500 hover:text-slate-600 text-2xl"
               >
                 &times;
               </button>
@@ -231,7 +231,7 @@ export default function PurchaseRequisitionsPage() {
                       required
                       value={formData.pr_date}
                       onChange={(e) => setFormData({ ...formData, pr_date: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div>
@@ -241,7 +241,7 @@ export default function PurchaseRequisitionsPage() {
                       placeholder="เช่น สต๊อกใกล้หมด, สั่งซื้อสำหรับงานประจำเดือน"
                       value={formData.note}
                       onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export default function PurchaseRequisitionsPage() {
                   <button
                     type="button"
                     onClick={handleAddLine}
-                    className="text-sm text-blue-600 font-medium hover:text-blue-800"
+                    className="text-sm text-brand-600 font-medium hover:text-brand-800"
                   >
                     + เพิ่มรายการ
                   </button>
@@ -274,7 +274,7 @@ export default function PurchaseRequisitionsPage() {
                             required
                             value={line.product_id}
                             onChange={(e) => handleLineChange(idx, "product_id", e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map((p) => (
@@ -332,7 +332,7 @@ export default function PurchaseRequisitionsPage() {
                 type="submit"
                 form="pr-form"
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

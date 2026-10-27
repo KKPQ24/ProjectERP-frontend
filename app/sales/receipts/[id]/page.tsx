@@ -36,7 +36,7 @@ const config: DocConfig<Receipt> = {
           {
             header: "ใบแจ้งหนี้ที่ตัดชำระ",
             render: (a) => (
-              <Link href={`/sales/invoices/${a.invoice_id}`} className="text-blue-600 hover:underline">
+              <Link href={`/sales/invoices/${a.invoice_id}`} className="text-brand-600 hover:underline">
                 {a.invoice?.inv_no ?? `#${a.invoice_id}`}
               </Link>
             ),

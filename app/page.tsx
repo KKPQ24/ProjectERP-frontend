@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getStoredToken } from "@/lib/api/client";
+import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
+import { canAccessPath, fetchIfAllowed } from "@/lib/access";
 import { productApi, customerApi, supplierApi } from "@/lib/api/masterdata";
 import {
   quotationApi,
@@ -19,7 +20,12 @@ import {
 } from "@/lib/api/purchasing";
 
 export default function Home() {
-  const router = useRouter();
+  const { user } = useAuth();
+  const roles = user?.roles ?? [];
+  const canViewSales = canAccessPath("/sales/sales-orders", roles) || canAccessPath("/sales/invoices", roles);
+  const canViewOrders = canAccessPath("/sales/quotations", roles) || canAccessPath("/purchasing/purchase-requisitions", roles);
+  const [loading, setLoading] = useState(true);
+  const [failedRequests, setFailedRequests] = useState(0);
 
   const [dashboardData, setDashboardData] = useState({
     products: [] as any[],
@@ -38,10 +44,7 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (!getStoredToken()) {
-      router.replace("/auth/login");
-      return;
-    }
+    if (!user) return;
 
     async function fetchAllDashboardData() {
       try {
@@ -49,21 +52,22 @@ export default function Home() {
           productApi.getProducts(),
           customerApi.getCustomers(),
           supplierApi.getSuppliers(),
-          quotationApi.getQuotations(),
-          salesOrderApi.getSalesOrders(),
-          shipmentApi.getShipments(),
-          invoiceApi.getInvoices(),
-          receiptApi.getReceipts(),
-          purchaseRequisitionApi.getPRs(),
-          purchaseOrderApi.getPOs(),
-          goodsReceiptApi.getGoodsReceipts(),
-          supplierBillApi.getBills(),
-          paymentApi.getPayments(),
+          fetchIfAllowed("/sales/quotations", user?.roles ?? [], () => quotationApi.getQuotations()),
+          fetchIfAllowed("/sales/sales-orders", user?.roles ?? [], () => salesOrderApi.getSalesOrders()),
+          fetchIfAllowed("/sales/shipments", user?.roles ?? [], () => shipmentApi.getShipments()),
+          fetchIfAllowed("/sales/invoices", user?.roles ?? [], () => invoiceApi.getInvoices()),
+          fetchIfAllowed("/sales/receipts", user?.roles ?? [], () => receiptApi.getReceipts()),
+          fetchIfAllowed("/purchasing/purchase-requisitions", user?.roles ?? [], () => purchaseRequisitionApi.getPRs()),
+          fetchIfAllowed("/purchasing/purchase-orders", user?.roles ?? [], () => purchaseOrderApi.getPOs()),
+          fetchIfAllowed("/purchasing/goods-receipts", user?.roles ?? [], () => goodsReceiptApi.getGoodsReceipts()),
+          fetchIfAllowed("/purchasing/bills", user?.roles ?? [], () => supplierBillApi.getBills()),
+          fetchIfAllowed("/purchasing/payments", user?.roles ?? [], () => paymentApi.getPayments()),
         ]);
 
         const val = (r: PromiseSettledResult<any>) =>
           r.status === "fulfilled" && Array.isArray(r.value) ? r.value : [];
 
+        setFailedRequests(results.filter((result) => result.status === "rejected").length);
         setDashboardData({
           products: val(results[0]),
           customers: val(results[1]),
@@ -81,11 +85,14 @@ export default function Home() {
         });
       } catch (error) {
         console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
+        setFailedRequests(13);
+      } finally {
+        setLoading(false);
       }
     }
 
     fetchAllDashboardData();
-  }, [router]);
+  }, [user]);
 
   // ทำสถานะ
   const STATUS_MAP: Record<string, { label: string; cls: string }> = {
@@ -93,7 +100,7 @@ export default function Home() {
     pending: { label: "รออนุมัติ", cls: "bg-amber-100 text-amber-800" },
     waiting: { label: "รออนุมัติ", cls: "bg-amber-100 text-amber-800" },
     draft: { label: "แบบร่าง", cls: "bg-slate-100 text-slate-700" },
-    posted: { label: "ผ่านรายการ", cls: "bg-blue-100 text-blue-800" },
+    posted: { label: "ผ่านรายการ", cls: "bg-brand-100 text-brand-800" },
     cancelled: { label: "ยกเลิก", cls: "bg-rose-100 text-rose-800" },
     voided: { label: "ยกเลิก", cls: "bg-rose-100 text-rose-800" },
   };
@@ -139,7 +146,7 @@ export default function Home() {
       cls: "bg-slate-100 text-slate-700",
     };
     return (
-      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>
+      <span className={`inline-flex whitespace-nowrap text-xs px-2 py-0.5 rounded-full font-medium ${s.cls}`}>
         {s.label}
       </span>
     );
@@ -157,6 +164,7 @@ export default function Home() {
     isOrder = false,
   ) =>
     (list || []).map((item) => ({
+      id: item.id,
       docCode: item[codeKey] || item.code || "-",
       docType: type,
       docTypeName: typeName,
@@ -322,170 +330,90 @@ export default function Home() {
     .sort((a, b) => b.diffDays - a.diffDays);
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/60 p-3 sm:p-4 lg:p-6">
-      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6">
-        {/* Header */}
-        <header className="relative isolate overflow-hidden rounded-3xl px-5 py-6 shadow-xl shadow-blue-950/10 sm:px-8 sm:py-8">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-24 -z-10 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 right-1/3 -z-10 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-                ระบบ ERP
-              </h1>
-              <p className="mt-2 text-sm sm:text-base">
-                ภาพรวมธุรกิจและรายการสำคัญของคุณในวันนี้
-              </p>
-            </div>
-            <div className="w-fit rounded-2xl border border-white/15 bg-white/10 px-4 py-3 shadow-inner shadow-white/5 backdrop-blur-sm">
-              <p className="text-[11px] font-medium uppercase tracking-wider">
-                วันนี้
-              </p>
-              <p className="mt-0.5 text-sm font-semibold sm:text-base">
-                {new Date().toLocaleDateString("th-TH", { dateStyle: "long" })}
-              </p>
-            </div>
+    <div className="space-y-7">
+      <div className="space-y-7">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="mb-1 text-xs font-medium text-slate-500">พื้นที่ทำงาน / ภาพรวม</p>
+            <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">ภาพรวมธุรกิจ</h1>
+            <p className="mt-2 text-sm text-slate-500">ติดตามงาน เอกสาร และข้อมูลสำคัญในแต่ละวัน</p>
           </div>
+          <p className="text-sm text-slate-500">{new Date().toLocaleDateString("th-TH", { dateStyle: "long" })}</p>
         </header>
 
-        {/* KPI cards */}
-        <section className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+        {loading && <p role="status" className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-500">กำลังโหลดข้อมูลภาพรวม...</p>}
+        {!loading && failedRequests > 0 && <p role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{failedRequests === 13 ? "ไม่สามารถโหลดข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อแล้วรีเฟรชหน้า" : "ข้อมูลบางส่วนยังโหลดไม่สำเร็จ ตัวเลขและรายการอาจไม่ครบ กรุณารีเฟรชเพื่อลองอีกครั้ง"}</p>}
+
+        <section aria-label="ข้อมูลสรุป" className="grid grid-cols-2 overflow-hidden rounded-lg border border-slate-200 bg-white xl:grid-cols-4">
           {[
-            {
-              label: "ยอดขายรวม",
-              value: `${todaySales.toLocaleString()} ฿`,
-              note: "วันนี้ ",
-              color: "from-sky-500 to-blue-600",
-              symbol: "฿",
-            },
-            {
-              label: "รออนุมัติ",
-              value: `${allPendingItems.length} รายการ`,
-              note: "PR, QT, PO, SO",
-              color: "from-amber-400 to-orange-500",
-              symbol: "…",
-            },
-            {
-              label: "สินค้าเหลือน้อย",
-              value: `${lowStockProducts.length} รายการ`,
-              note: "ถึงจุดสั่งซื้อซ้ำ",
-              color: "from-rose-500 to-red-600",
-              symbol: "!",
-            },
-            {
-              label: "ลูกค้าทั้งหมด",
-              value: `${dashboardData.customers.length} ราย`,
-              note: "ในฐานข้อมูล",
-              color: "from-emerald-400 to-teal-600",
-              symbol: "◎",
-            },
-          ].map((k) => (
-            <div
-              key={k.label}
-              className="group relative flex min-w-0 items-center gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60 sm:p-5"
-            >
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${k.color} text-lg font-bold text-white shadow-lg shadow-slate-300/50`}>
-                {k.symbol}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-slate-500 sm:text-sm">{k.label}</p>
-                <p className="truncate text-xl font-bold tracking-tight text-slate-800 sm:text-2xl">
-                  {k.value}
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">{k.note}</p>
-              </div>
+            { label: "ยอดขายวันนี้", value: canViewSales ? todaySales.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—", unit: "บาท", note: "ยอดรวมตามเอกสารวันนี้" },
+            { label: "เอกสารรออนุมัติ", value: canViewOrders ? allPendingItems.length : "—", unit: "รายการ", note: "ใบขอซื้อ · ใบเสนอราคา · ใบสั่งซื้อ · ใบสั่งขาย" },
+            { label: "สินค้าเหลือน้อย", value: lowStockProducts.length, unit: "รายการ", note: "ถึงจุดสั่งซื้อซ้ำ" },
+            { label: "ลูกค้าในระบบ", value: dashboardData.customers.length, unit: "ราย", note: "ข้อมูลลูกค้าทั้งหมด" },
+          ].map((item, index) => (
+            <div key={item.label} className={`min-w-0 px-5 py-6 sm:px-6 ${index % 2 === 1 ? "border-l border-slate-200" : ""} ${index > 1 ? "border-t border-slate-200 xl:border-t-0 xl:border-l" : ""}`}>
+              <p className="text-sm text-slate-500">{item.label}</p>
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums tracking-tight text-slate-900 sm:text-3xl">{loading || failedRequests > 0 ? "—" : item.value}<span className="text-xs font-normal tracking-normal text-slate-500">{item.unit}</span></p>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">{item.note}</p>
             </div>
           ))}
         </section>
 
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-slate-200 pb-5">
+          <span className="text-xs font-medium text-slate-500">เริ่มทำงาน</span>
+          {canAccessPath("/sales/quotations", roles) && <Link href="/sales/quotations" className="text-sm font-medium text-brand-700 hover:underline">ใบเสนอราคา <span aria-hidden="true">↗</span></Link>}
+          {canAccessPath("/purchasing/purchase-requisitions", roles) && <Link href="/purchasing/purchase-requisitions" className="text-sm font-medium text-brand-700 hover:underline">ใบขอซื้อ <span aria-hidden="true">↗</span></Link>}
+          <Link href="/masterdata/products" className="text-sm font-medium text-brand-700 hover:underline">ข้อมูลสินค้า <span aria-hidden="true">↗</span></Link>
+        </div>
         {/* grid แยก row*/}
-        <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-12">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-12">
           {/* เอกสารที่รออนุมัติ */}
-          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-8">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
+          {canViewOrders && <section className="erp-panel erp-dashboard-panel flex min-w-0 flex-col lg:col-span-12 min-[87.5rem]:col-span-8">
+            <div className="erp-panel-heading shrink-0">
               <div className="min-w-0">
                 <h2 className="font-semibold text-slate-800">
                   เอกสารที่รออนุมัติ
                 </h2>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  (ใบขอซื้อ PR, ใบเสนอราคา QT, PO, SO)
-                </p>
               </div>
               <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-200/70">
                 {allPendingItems.length} รายการ
               </span>
             </div>
 
-            <div className="flex-1 overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left">
-                <thead className="bg-slate-50/80 text-xs font-medium text-slate-500">
+            <div className="min-h-0 flex-1 overflow-auto">
+              <table className="w-full min-w-[620px] text-left">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-xs text-slate-500">
                   <tr>
-                    <th className="px-4 py-3 font-medium">ประเภท</th>
-                    <th className="px-4 py-3 font-medium">เลขที่เอกสาร</th>
-                    <th className="px-4 py-3 font-medium">วันที่</th>
-                    <th className="px-4 py-3 font-medium">ลูกค้า / ผู้ขาย</th>
-                    <th className="px-4 py-3 text-right font-medium">ยอดรวม</th>
-                    <th className="px-4 py-3 text-center font-medium">สถานะ</th>
-                    <th className="px-4 py-3 text-center font-medium">จัดการ</th>
+                    <th className="px-4 py-3">เลขที่เอกสาร</th>
+                    <th className="px-4 py-3">ลูกค้า / ผู้ขาย</th>
+                    <th className="px-4 py-3 text-right">ยอดรวม</th>
+                    <th className="px-4 py-3 text-center">สถานะ</th>
+                    <th className="px-4 py-3"><span className="sr-only">จัดการ</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {allPendingItems.length > 0 ? (
-                    allPendingItems.map((item, idx) => (
-                      <tr
-                        key={item.docCode || idx}
-                        className="transition-colors hover:bg-blue-50/40"
-                      >
-                        <td className="px-4 py-3 text-sm">
-                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                            {item.docTypeName}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                          {item.docCode}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">
-                          {formatDate(item.docDate)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-600 max-w-[160px] truncate">
-                          {item.partyName}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right font-medium text-slate-800 whitespace-nowrap">
-                          {item.amount != null
-                            ? `${Number(item.amount).toLocaleString()} ฿`
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          {renderStatus(item.status)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <button
-                            onClick={() => router.push(item.route)}
-                            className="min-h-9 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                          >
-                            ตรวจสอบ
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="px-4 py-12 text-center text-sm text-slate-400"
-                      >
-                        ไม่มีเอกสารที่รออนุมัติ
+                  {allPendingItems.length > 0 ? allPendingItems.map((item) => (
+                    <tr key={`${item.docType}-${item.id}`}>
+                      <td className="px-4 py-3">
+                        <Link href={`${item.route}/${item.id}`} className="whitespace-nowrap text-sm font-medium text-brand-700 hover:underline">{item.docCode}</Link>
+                        <p className="mt-1 text-[11px] text-slate-500">{item.docTypeName}</p>
                       </td>
+                      <td className="max-w-[150px] truncate px-4 py-3 text-sm text-slate-600">{item.partyName}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium">{item.amount != null ? `${Number(item.amount).toLocaleString()} ฿` : "-"}</td>
+                      <td className="px-4 py-3 text-center">{renderStatus(item.status)}</td>
+                      <td className="px-4 py-3 text-right"><Link href={`${item.route}/${item.id}`} className="inline-flex min-h-9 items-center whitespace-nowrap rounded-md bg-brand-50 px-3 text-xs font-medium text-brand-700 hover:bg-brand-100">ตรวจสอบ</Link></td>
                     </tr>
+                  )) : (
+                    <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-slate-500">{loading ? "กำลังโหลดเอกสาร..." : failedRequests > 0 ? "ข้อมูลเอกสารยังไม่ครบ" : "ไม่มีเอกสารที่รออนุมัติ"}</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </section>
+          </section>}
 
           {/* สินค้าที่เหลือน้อย */}
-          <section className="flex h-[320px] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm sm:h-[360px] lg:col-span-4 lg:h-[400px]">
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
+          <section className={`erp-panel erp-dashboard-panel flex min-w-0 flex-col lg:col-span-12 ${canViewOrders ? "min-[87.5rem]:col-span-4" : ""}`}>
+            <div className="erp-panel-heading shrink-0">
               <h2 className="font-semibold text-slate-800">
                 สินค้าที่เหลือน้อย
               </h2>
@@ -493,7 +421,7 @@ export default function Home() {
                 {lowStockProducts.length} รายการ
               </span>
             </div>
-            <div className="overflow-y-auto flex-1">
+            <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full min-w-[360px] text-left">
                 <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-medium text-slate-500 shadow-sm">
                   <tr>
@@ -509,7 +437,7 @@ export default function Home() {
                           <p className="font-medium line-clamp-1">
                             {item.name}
                           </p>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-500">
                             รหัส: {item.sku} | จุดสั่งซื้อ:{" "}
                             {item.reorder_point ?? "-"}
                           </p>
@@ -524,9 +452,9 @@ export default function Home() {
                     <tr>
                       <td
                         colSpan={2}
-                        className="px-4 py-10 text-center text-sm text-slate-400"
+                        className="px-4 py-10 text-center text-sm text-slate-500"
                       >
-                        สต็อกสินค้าอยู่ในเกณฑ์ปกติ
+                        {loading ? "กำลังโหลดสินค้า..." : failedRequests > 0 ? "ข้อมูลสินค้ายังไม่ครบ" : "ไม่มีสินค้าที่ถึงจุดสั่งซื้อซ้ำ"}
                       </td>
                     </tr>
                   )}
@@ -535,13 +463,13 @@ export default function Home() {
             </div>
           </section>
           {/* เอกสารล่าสุด 10 ราบการ */}
-          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-7">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
+          <section className="erp-panel flex min-w-0 flex-col lg:col-span-12">
+            <div className="erp-panel-heading">
               <h2 className="font-semibold text-slate-800">เอกสารล่าสุด</h2>
-              <span className="text-xs text-slate-400">10 รายการล่าสุด</span>
+              <span className="text-xs text-slate-500">10 รายการล่าสุด</span>
             </div>
 
-            <div className="max-h-[280px] overflow-auto">
+            <div className="max-h-[440px] overflow-auto">
               <table className="w-full min-w-[620px] border-collapse text-left">
                 <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-medium text-slate-500 shadow-sm">
                   <tr>
@@ -557,14 +485,13 @@ export default function Home() {
                     allRecentDocs.map((doc, idx) => (
                       <tr
                         key={doc.docCode || idx}
-                        onClick={() => router.push(doc.route)}
-                        className="cursor-pointer transition-colors hover:bg-blue-50/40"
+                        className="transition-colors hover:bg-brand-50/40"
                       >
                         <td className="px-4 py-3 text-sm font-medium text-slate-800">
                           <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 mr-1.5">
                             {doc.docType}
                           </span>
-                          {doc.docCode}
+                          <Link href={`${doc.route}/${doc.id}`} className="text-brand-700 underline-offset-4 hover:underline">{doc.docCode}</Link>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">
                           {formatDate(doc.docDate)}
@@ -586,9 +513,9 @@ export default function Home() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-10 text-center text-sm text-slate-400"
+                        className="px-4 py-10 text-center text-sm text-slate-500"
                       >
-                        ยังไม่มีเอกสารในระบบ
+                        {loading ? "กำลังโหลดเอกสาร..." : failedRequests > 0 ? "ข้อมูลเอกสารยังไม่ครบ" : "ยังไม่มีเอกสารในระบบ"}
                       </td>
                     </tr>
                   )}
@@ -598,19 +525,19 @@ export default function Home() {
           </section>
 
           {/* เอกสารที่ค้าง (ค้างเกิน 3 วัน) */}
-          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-4 sm:px-5">
+          {canViewOrders && <section className="erp-panel flex min-w-0 flex-col lg:col-span-12">
+            <div className="erp-panel-heading">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-semibold text-slate-800">เอกสารที่ค้าง</h2>
                 <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600">
                   ค้างเกิน 3 วัน
                 </span>
               </div>
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-xs text-slate-500 font-medium">
                 {overdueDocs.length} รายการ
               </span>
             </div>
-            <div className="max-h-[280px] flex-1 overflow-auto">
+            <div className="max-h-[440px] flex-1 overflow-auto">
               <table className="w-full min-w-[620px] border-collapse text-left">
                 <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-medium text-slate-500 shadow-sm">
                   <tr>
@@ -628,14 +555,13 @@ export default function Home() {
                     overdueDocs.map((doc, idx) => (
                       <tr
                         key={doc.docCode || idx}
-                        onClick={() => router.push(doc.route)}
-                        className="cursor-pointer transition-colors hover:bg-rose-50/40"
+                        className="transition-colors hover:bg-rose-50/40"
                       >
                         <td className="px-4 py-3 text-sm font-medium text-slate-800">
                           <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 mr-1.5">
                             {doc.docType}
                           </span>
-                          {doc.docCode}
+                          <Link href={`${doc.route}/${doc.id}`} className="text-brand-700 underline-offset-4 hover:underline">{doc.docCode}</Link>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">
                           {formatDate(doc.docDate)}
@@ -659,16 +585,16 @@ export default function Home() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-10 text-center text-sm text-slate-400"
+                        className="px-4 py-10 text-center text-sm text-slate-500"
                       >
-                        ไม่มีเอกสารที่ค้างเกิน 3 วัน
+                        {loading ? "กำลังโหลดเอกสาร..." : failedRequests > 0 ? "ข้อมูลเอกสารยังไม่ครบ" : "ไม่มีเอกสารที่ค้างเกิน 3 วัน"}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </section>
+          </section>}
         </div>
       </div>
     </div>

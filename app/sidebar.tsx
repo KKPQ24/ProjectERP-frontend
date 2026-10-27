@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRef } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import { canAccessPath } from "@/lib/access";
 import NavIcon, { type NavIconName } from "@/components/NavIcon";
 
 type NavLink = {
@@ -19,17 +21,10 @@ type NavGroup = {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useAuth();
+  const mobileMenu = useRef<HTMLDialogElement>(null);
 
-  useEffect(() => {
-    import("@/lib/api/client").then(({ getStoredToken }) => {
-      setIsLoggedIn(!!getStoredToken());
-    });
-  }, [pathname]);
-
-  if (pathname === "/auth/login") {
-    return null;
-  }
+  if (pathname === "/auth/login") return null;
 
   const navGroups: NavGroup[] = [
     {
@@ -76,65 +71,89 @@ export default function Sidebar() {
     },
   ];
 
-  return (
-    <aside className="flex flex-col w-64 h-screen border-r border-slate-200 bg-white shrink-0 overflow-y-auto">
-      {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-slate-200">
-        <Link href="/" className="font-bold text-lg text-slate-800">
-          ระบบ ERP
-        </Link>
-      </div>
+  const visibleGroups = navGroups.map((group) => ({
+    ...group,
+    links: group.links.filter((link) => user && canAccessPath(link.href, user.roles ?? [])),
+  })).filter((group) => group.links.length > 0);
 
-      <nav className="flex-1 px-4 py-4 space-y-6">
-        {/* Dashboard Link */}
-        <div>
-          <Link
-            href="/"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium text-sm transition-colors ${
-              pathname === "/"
-                ? "bg-blue-50 text-blue-700"
-                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-            }`}
-          >
-            <NavIcon name="dashboard" />
-            แดชบอร์ด
-          </Link>
-        </div>
+  const brand = (
+    <Link href="/" onClick={() => mobileMenu.current?.close()} className="text-base font-semibold tracking-tight text-slate-900">
+      ระบบ ERP
+    </Link>
+  );
 
-        {/* Dynamic Groups */}
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            <h3 className="flex items-center gap-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              <NavIcon name={group.icon} className="h-4 w-4" />
-              {group.label}
-            </h3>
-            <div className="space-y-1">
-              {group.links.map((link) => {
-                const isActive = pathname.startsWith(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`group flex items-center gap-3 px-3 py-2 rounded-md font-medium text-sm transition-colors ${
-                      isActive
-                        ? "bg-slate-100 text-slate-900"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <NavIcon
-                      name={link.icon}
-                      className={`h-5 w-5 transition-colors ${
-                        isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
-                      }`}
-                    />
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </div>
+  const navigation = (
+    <nav aria-label="เมนูหลัก" className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
+      <Link
+        href="/"
+        aria-current={pathname === "/" ? "page" : undefined}
+        onClick={() => mobileMenu.current?.close()}
+        className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm font-medium ${
+          pathname === "/" ? "bg-brand-100 text-brand-800" : "text-slate-600 hover:bg-slate-100"
+        }`}
+      >
+        <NavIcon name="dashboard" className="h-[18px] w-[18px]" />
+        ภาพรวม
+      </Link>
+      {visibleGroups.map((group) => (
+        <div key={group.label}>
+          <h2 className="mb-1.5 px-3 text-[11px] font-medium text-slate-500">{group.label}</h2>
+          <div className="space-y-0.5">
+            {group.links.map((link) => {
+              const isActive = pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => mobileMenu.current?.close()}
+                  className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm ${
+                    isActive ? "bg-brand-100 font-semibold text-brand-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <NavIcon name={link.icon} className={`h-[18px] w-[18px] ${isActive ? "text-brand-700" : "text-slate-500"}`} />
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
-        ))}
-      </nav>
-    </aside>
+        </div>
+      ))}
+    </nav>
+  );
+
+  return (
+    <>
+      <aside className="hidden h-dvh w-60 shrink-0 flex-col border-r border-slate-200 bg-slate-50 lg:flex">
+        <div className="flex h-[76px] shrink-0 items-center border-b border-slate-200 px-6">{brand}</div>
+        {navigation}
+      </aside>
+
+      <button
+        type="button"
+        onClick={() => mobileMenu.current?.showModal()}
+        aria-label="เปิดเมนูหลัก"
+        aria-haspopup="dialog"
+        aria-controls="mobile-navigation"
+        className="fixed left-3 top-3 z-40 flex h-11 w-11 items-center justify-center rounded-md text-slate-700 hover:bg-slate-100 lg:hidden"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+      <dialog
+        ref={mobileMenu}
+        id="mobile-navigation"
+        aria-label="เมนูหลัก"
+        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-dvh w-72 max-w-[85vw] border-0 bg-white p-0 text-slate-900 backdrop:bg-slate-950/35"
+        onClick={(event) => { if (event.target === event.currentTarget) mobileMenu.current?.close(); }}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-slate-200 px-5">
+            {brand}
+            <button type="button" autoFocus aria-label="ปิดเมนูหลัก" onClick={() => mobileMenu.current?.close()} className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-slate-100">✕</button>
+          </div>
+          {navigation}
+        </div>
+      </dialog>
+    </>
   );
 }

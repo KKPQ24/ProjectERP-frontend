@@ -152,7 +152,7 @@ export default function AccountsPage() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
             ผังบัญชี
@@ -163,14 +163,14 @@ export default function AccountsPage() {
         </div>
         <button
           onClick={handleOpenNew}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + เพิ่มบัญชี
         </button>
       </div>
 
       <SearchSummary query={query} shown={visible.length} total={accounts.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -251,7 +251,7 @@ export default function AccountsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleOpenEdit(account)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
+                      className="text-brand-600 hover:text-brand-900 mr-4"
                     >
                       แก้ไข
                     </button>
@@ -284,7 +284,7 @@ export default function AccountsPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-500 hover:text-slate-600"
               >
                 &times;
               </button>
@@ -303,7 +303,7 @@ export default function AccountsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, code: e.target.value })
                     }
-                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                   />
                 </div>
                 <div>
@@ -317,7 +317,7 @@ export default function AccountsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                    className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -334,7 +334,7 @@ export default function AccountsPage() {
                           type: e.target.value as AccountType,
                         })
                       }
-                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100 capitalize"
+                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100 capitalize"
                     >
                       {ACCOUNT_TYPES.map((t) => (
                         <option key={t} value={t} className="capitalize">
@@ -356,7 +356,7 @@ export default function AccountsPage() {
                           normal_balance: e.target.value,
                         })
                       }
-                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
+                      className="w-full border border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3 text-slate-900 disabled:opacity-50 disabled:bg-slate-100"
                     >
                       <option value="D">เดบิต (D)</option>
                       <option value="C">เครดิต (C)</option>
@@ -375,7 +375,7 @@ export default function AccountsPage() {
                           is_active: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-600"
                     />
                     <label
                       htmlFor="is_active"
@@ -396,7 +396,7 @@ export default function AccountsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                    className="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 font-medium"
                   >
                     บันทึก
                   </button>

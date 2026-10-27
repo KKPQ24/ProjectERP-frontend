@@ -2,7 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
+import { useAuth } from "@/components/AuthProvider";
+import { canAccessPath, fetchIfAllowed } from "@/lib/access";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { invoiceApi, shipmentApi, salesOrderApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
@@ -12,6 +15,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 function InvoicesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user: sessionUser } = useAuth();
   const refShId = searchParams.get('ref_sh');
   
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -19,7 +23,7 @@ function InvoicesContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = invoices.filter((inv) =>
     matchesSearch(query, [inv.inv_no, inv.sales_order?.so_no, inv.customer?.name, statusLabel(inv.status), fmtDateShort(inv.inv_date), inv.total_amount]),
   );
@@ -51,7 +55,7 @@ function InvoicesContent() {
       
       const [invData, shData, custData, prodData] = await Promise.all([
         invoiceApi.getInvoices(),
-        shipmentApi.getShipments(),
+        fetchIfAllowed("/sales/shipments", sessionUser?.roles ?? [], () => shipmentApi.getShipments()),
         customerApi.getCustomers(),
         productApi.getProducts(),
       ]);
@@ -67,7 +71,7 @@ function InvoicesContent() {
         console.error("Failed to fetch current user", e);
       }
       
-      if (refShId && !isModalOpen) {
+      if (refShId && !isModalOpen && canAccessPath("/sales/shipments", sessionUser?.roles ?? [])) {
         await handleSelectShipment(refShId, shData, prodData);
         setIsModalOpen(true);
       }
@@ -232,10 +236,9 @@ function InvoicesContent() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบแจ้งหนี้</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบแจ้งหนี้เพื่อเรียกเก็บเงินลูกค้า</p>
         </div>
         <button
           onClick={() => {
@@ -249,14 +252,14 @@ function InvoicesContent() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบแจ้งหนี้
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={invoices.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบแจ้งหนี้" value={query} onChange={setQuery} shown={visible.length} total={invoices.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -274,7 +277,7 @@ function InvoicesContent() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/sales/invoices/${inv.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {inv.inv_no}
@@ -293,7 +296,7 @@ function InvoicesContent() {
                     <button onClick={() => handlePost(inv.id)} className="text-green-600 hover:text-green-900 mr-4">บันทึกบัญชี</button>
                   )}
                   {inv.status === 'posted' && (
-                    <button onClick={() => router.push(`/sales/receipts?ref_inv=${inv.id}`)} className="text-blue-600 hover:text-blue-900">สร้างใบรับเงิน</button>
+                    <button onClick={() => router.push(`/sales/receipts?ref_inv=${inv.id}`)} className="text-brand-600 hover:text-brand-900">สร้างใบรับเงิน</button>
                   )}
                 </td>
               </tr>
@@ -316,19 +319,19 @@ function InvoicesContent() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">สร้างใบแจ้งหนี้ใหม่</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-600">&times;</button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1">
               <form id="inv-form" onSubmit={handleSubmit}>
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6">
-                  <label className="block text-sm font-semibold text-blue-800 mb-1">
+                <div className="bg-brand-50 border border-brand-100 p-4 rounded-md mb-6">
+                  <label className="block text-sm font-semibold text-brand-800 mb-1">
                     ดึงข้อมูลอ้างอิงจากใบส่งของ (Shipment)
                   </label>
                   <select 
                     value={formData.shipment_id} 
                     onChange={e => handleSelectShipment(e.target.value, shipments, products)}
-                    className="w-full border-blue-200 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2 px-3"
+                    className="w-full border-brand-200 bg-white rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 text-sm py-2 px-3"
                   >
                     <option value="">-- ไม่ระบุอ้างอิง (สร้างใหม่) --</option>
                     {shipments.map(sh => (
@@ -346,7 +349,7 @@ function InvoicesContent() {
                       required 
                       value={formData.customer_id} 
                       onChange={e => setFormData({...formData, customer_id: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 disabled:bg-slate-100"
                       disabled={!!formData.shipment_id}
                     >
                       <option value="">-- เลือกลูกค้า --</option>
@@ -361,7 +364,7 @@ function InvoicesContent() {
                         required 
                         value={formData.inv_date} 
                         onChange={e => setFormData({...formData, inv_date: e.target.value})}
-                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                       />
                     </div>
                     <div className="flex-1">
@@ -371,7 +374,7 @@ function InvoicesContent() {
                         required 
                         value={formData.due_date} 
                         onChange={e => setFormData({...formData, due_date: e.target.value})}
-                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                       />
                     </div>
                   </div>
@@ -379,7 +382,7 @@ function InvoicesContent() {
 
                 <div className="mb-4 flex justify-between items-end">
                   <h3 className="text-md font-semibold text-slate-800">รายการเรียกเก็บเงิน</h3>
-                  <button type="button" onClick={handleAddLine} className="text-sm text-blue-600 font-medium hover:text-blue-800">
+                  <button type="button" onClick={handleAddLine} className="text-sm text-brand-600 font-medium hover:text-brand-800">
                     + เพิ่มรายการ
                   </button>
                 </div>
@@ -402,7 +405,7 @@ function InvoicesContent() {
                             required 
                             value={line.product_id} 
                             onChange={e => handleLineChange(idx, 'product_id', e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map(p => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
@@ -439,7 +442,7 @@ function InvoicesContent() {
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-brand-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>
               </form>
@@ -458,7 +461,7 @@ function InvoicesContent() {
                 type="submit" 
                 form="inv-form" 
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

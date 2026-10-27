@@ -44,7 +44,7 @@ const config: DocConfig<SalesOrder> = {
         value: d.qt_id ? (
           <Link
             href={`/sales/quotations/${d.qt_id}`}
-            className="text-blue-600 hover:underline"
+            className="text-brand-600 hover:underline"
           >
             {d.quotation?.qt_no ?? `#${d.qt_id}`}
           </Link>

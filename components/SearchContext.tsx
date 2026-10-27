@@ -117,7 +117,7 @@ export function SearchSummary({
     <p className="mb-3 text-sm text-slate-500" aria-live="polite">
       ผลการค้นหา “
       <span className="font-medium text-slate-800">{query.trim()}</span>” พบ{" "}
-      <span className="font-semibold text-blue-600">{shown}</span> จากทั้งหมด{" "}
+      <span className="font-semibold text-brand-600">{shown}</span> จากทั้งหมด{" "}
       {total} รายการ
     </p>
   );

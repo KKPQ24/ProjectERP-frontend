@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
+import { canAccessPath } from "@/lib/access";
 import { fmtDateLong, statusMeta } from "./docUtils";
 
 /* ------------------------------------------------------------------ */
@@ -106,7 +108,7 @@ const ALIGN: Record<Align, string> = {
 };
 
 const TONE: Record<NonNullable<DocAction["tone"]>, string> = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700",
+  primary: "bg-brand-600 text-white hover:bg-brand-700",
   success: "bg-green-600 text-white hover:bg-green-700",
   warning: "bg-amber-500 text-white hover:bg-amber-600",
   danger: "border border-red-300 bg-white text-red-600 hover:bg-red-50",
@@ -324,6 +326,7 @@ export default function DocumentDetail<T>({
   id: string;
   config: DocConfig<T>;
 }) {
+  const { user } = useAuth();
   const [state, setState] = useState<State<T>>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -402,7 +405,7 @@ export default function DocumentDetail<T>({
   const doc = state.doc;
   const view = config.view(doc);
   const meta = statusMeta(view.status, config.statusLabels);
-  const actions = config.actions?.(doc) ?? [];
+  const actions = (config.actions?.(doc) ?? []).filter((action) => !action.href || canAccessPath(action.href, user?.roles ?? []));
   const canEdit = !!config.edit?.allowed(doc);
   const canCancel = !!config.cancel?.allowed(doc);
 
@@ -499,7 +502,7 @@ export default function DocumentDetail<T>({
         )}
 
         {view.createdAt && (
-          <p className="text-xs text-slate-400">สร้างเมื่อ {fmtDateLong(view.createdAt)}</p>
+          <p className="text-xs text-slate-500">สร้างเมื่อ {fmtDateLong(view.createdAt)}</p>
         )}
       </div>
 

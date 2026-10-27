@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import Link from "next/link";
+import AccessLink from "@/components/AccessLink";
 import { invoiceApi } from "@/lib/api/sales";
 import type { Invoice, InvoiceLine } from "@/types";
 import DocumentDetail, {
@@ -31,9 +31,9 @@ const config: DocConfig<Invoice> = {
       {
         label: "อ้างอิงใบสั่งขาย",
         value: d.so_id ? (
-          <Link href={`/sales/sales-orders/${d.so_id}`} className="text-blue-600 hover:underline">
+          <AccessLink href={`/sales/sales-orders/${d.so_id}`} className="text-brand-600 hover:underline">
             {d.sales_order?.so_no ?? `#${d.so_id}`}
-          </Link>
+          </AccessLink>
         ) : (
           "-"
         ),
@@ -41,9 +41,9 @@ const config: DocConfig<Invoice> = {
       {
         label: "อ้างอิงใบส่งของ",
         value: d.shipment_id ? (
-          <Link href={`/sales/shipments/${d.shipment_id}`} className="text-blue-600 hover:underline">
+          <AccessLink href={`/sales/shipments/${d.shipment_id}`} className="text-brand-600 hover:underline">
             {d.shipment?.sh_no ?? `#${d.shipment_id}`}
-          </Link>
+          </AccessLink>
         ) : (
           "-"
         ),

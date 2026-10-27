@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_Thai, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "./sidebar";
 import Header from "./header";
+import { AuthProvider, RouteAccess } from "@/components/AuthProvider";
 import { SearchProvider } from "@/components/SearchContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const erpFont = Noto_Sans_Thai({
+  variable: "--font-erp",
+  subsets: ["thai", "latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -27,18 +29,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-slate-800`}>
+      <body className={`${erpFont.variable} ${geistMono.variable} antialiased text-slate-800`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:p-3">ข้ามไปยังเนื้อหา</a>
+        <AuthProvider>
         <SearchProvider>
-          <div className="flex h-screen overflow-hidden bg-slate-50">
+          <div className="flex h-dvh overflow-hidden bg-slate-50">
             <Sidebar />
-            <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="relative flex min-w-0 flex-1 flex-col overflow-y-auto">
               <Header />
-              <main className="w-full px-4 py-8 sm:px-6 lg:px-8 max-w-9xl mx-auto">
-                {children}
+              <main id="main-content" tabIndex={-1} className="erp-page w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                <RouteAccess>{children}</RouteAccess>
               </main>
             </div>
           </div>
         </SearchProvider>
+        </AuthProvider>
       </body>
     </html>
   );

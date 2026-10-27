@@ -6,12 +6,12 @@ export interface StatusMeta {
 }
 
 const BASE_STATUS: Record<string, StatusMeta> = {
-  draft: { label: "ร่าง", cls: "bg-yellow-100 text-yellow-800" },
-  pending: { label: "รอดำเนินการ", cls: "bg-blue-100 text-blue-800" },
-  approved: { label: "อนุมัติแล้ว", cls: "bg-green-100 text-green-800" },
-  posted: { label: "บันทึกแล้ว", cls: "bg-green-100 text-green-800" },
-  cancelled: { label: "ยกเลิกแล้ว", cls: "bg-red-100 text-red-800" },
-  voided: { label: "ยกเลิกแล้ว", cls: "bg-red-100 text-red-800" },
+  draft: { label: "ร่าง", cls: "bg-slate-100 text-slate-700" },
+  pending: { label: "รอดำเนินการ", cls: "bg-amber-50 text-amber-800" },
+  approved: { label: "อนุมัติแล้ว", cls: "bg-emerald-50 text-emerald-800" },
+  posted: { label: "บันทึกแล้ว", cls: "bg-emerald-50 text-emerald-800" },
+  cancelled: { label: "ยกเลิกแล้ว", cls: "bg-red-50 text-red-700" },
+  voided: { label: "ยกเลิกแล้ว", cls: "bg-red-50 text-red-700" },
 };
 
 /** ชื่อสถานะภาษาไทย (overrides ใช้เปลี่ยนคำเฉพาะเอกสาร เช่น posted = "บันทึกบัญชีแล้ว") */

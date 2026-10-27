@@ -36,7 +36,7 @@ const config: DocConfig<Payment> = {
           {
             header: "ใบตั้งหนี้ที่ตัดชำระ",
             render: (a) => (
-              <Link href={`/purchasing/bills/${a.bill_id}`} className="text-blue-600 hover:underline">
+              <Link href={`/purchasing/bills/${a.bill_id}`} className="text-brand-600 hover:underline">
                 {a.supplier_bill?.bill_no ?? `#${a.bill_id}`}
               </Link>
             ),

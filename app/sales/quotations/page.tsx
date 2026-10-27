@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearch, matchesSearch, SearchSummary } from "@/components/SearchContext";
+import { matchesSearch } from "@/components/SearchContext";
+import DocumentSearch from "@/components/DocumentSearch";
 import { statusLabel, fmtDateShort } from "@/components/doc/docUtils";
 import { quotationApi } from "@/lib/api/sales";
 import { customerApi, productApi } from "@/lib/api/masterdata";
@@ -13,7 +14,7 @@ export default function QuotationsPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { query } = useSearch();
+  const [query, setQuery] = useState("");
   const visible = quotations.filter((qt) =>
     matchesSearch(query, [qt.qt_no, qt.customer?.name, statusLabel(qt.status), fmtDateShort(qt.qt_date), qt.total_amount, qt.note]),
   );
@@ -145,10 +146,9 @@ export default function QuotationsPage() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ใบเสนอราคา</h1>
-          <p className="mt-2 text-sm text-slate-600">จัดการข้อมูลใบเสนอราคาและพิมพ์เอกสาร</p>
         </div>
         <button
           onClick={() => {
@@ -161,14 +161,14 @@ export default function QuotationsPage() {
             });
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           + สร้างใบเสนอราคา
         </button>
       </div>
 
-      <SearchSummary query={query} shown={visible.length} total={quotations.length} />
-      <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+      <DocumentSearch label="ค้นหาใบเสนอราคา" value={query} onChange={setQuery} shown={visible.length} total={quotations.length} />
+      <div className="bg-white border border-slate-200 rounded-lg overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -185,7 +185,7 @@ export default function QuotationsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/sales/quotations/${qt.id}`}
-                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-brand-600 hover:text-brand-800 hover:underline"
                     title="ดูรายละเอียดเอกสาร"
                   >
                     {qt.qt_no}
@@ -199,7 +199,7 @@ export default function QuotationsPage() {
                     qt.status === 'approved'
                       ? 'bg-green-100 text-green-800'
                       : qt.status === 'pending'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-brand-100 text-brand-800'
                       : qt.status === 'cancelled'
                       ? 'bg-red-100 text-red-800'
                       : 'bg-yellow-100 text-yellow-800'
@@ -236,7 +236,7 @@ export default function QuotationsPage() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg font-bold text-slate-800">สร้างใบเสนอราคาใหม่</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-600">&times;</button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1">
@@ -248,7 +248,7 @@ export default function QuotationsPage() {
                       required 
                       value={formData.customer_id} 
                       onChange={e => setFormData({...formData, customer_id: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     >
                       <option value="">-- เลือกลูกค้า --</option>
                       {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -261,7 +261,7 @@ export default function QuotationsPage() {
                       required 
                       value={formData.qt_date} 
                       onChange={e => setFormData({...formData, qt_date: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                   <div>
@@ -270,14 +270,14 @@ export default function QuotationsPage() {
                       type="text" 
                       value={formData.note} 
                       onChange={e => setFormData({...formData, note: e.target.value})}
-                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-slate-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500"
                     />
                   </div>
                 </div>
 
                 <div className="mb-4 flex justify-between items-end">
                   <h3 className="text-md font-semibold text-slate-800">รายการสินค้า</h3>
-                  <button type="button" onClick={handleAddLine} className="text-sm text-blue-600 font-medium hover:text-blue-800">
+                  <button type="button" onClick={handleAddLine} className="text-sm text-brand-600 font-medium hover:text-brand-800">
                     + เพิ่มรายการ
                   </button>
                 </div>
@@ -300,7 +300,7 @@ export default function QuotationsPage() {
                             required 
                             value={line.product_id} 
                             onChange={e => handleLineChange(idx, 'product_id', e.target.value)}
-                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-blue-500"
+                            className="w-full text-sm border-slate-300 rounded shadow-sm focus:ring-brand-500"
                           >
                             <option value="">-- เลือกสินค้า --</option>
                             {products.map(p => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
@@ -337,7 +337,7 @@ export default function QuotationsPage() {
                   <div className="w-64 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-600">มูลค่ารวม:</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH')}</span></div>
                     <div className="flex justify-between"><span className="text-slate-600">ภาษีมูลค่าเพิ่ม 7%:</span><span className="font-medium text-slate-900">{vat.toLocaleString('th-TH')}</span></div>
-                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-blue-700">{total.toLocaleString('th-TH')}</span></div>
+                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base"><span className="font-bold text-slate-800">ยอดรวมทั้งสิ้น:</span><span className="font-bold text-brand-700">{total.toLocaleString('th-TH')}</span></div>
                   </div>
                 </div>
               </form>
@@ -356,7 +356,7 @@ export default function QuotationsPage() {
                 type="submit" 
                 form="qt-form" 
                 disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
                   <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

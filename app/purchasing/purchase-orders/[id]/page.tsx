@@ -44,7 +44,7 @@ const config: DocConfig<PurchaseOrder> = {
         value: d.pr_id ? (
           <Link
             href={`/purchasing/purchase-requisitions/${d.pr_id}`}
-            className="text-blue-600 hover:underline"
+            className="text-brand-600 hover:underline"
           >
             {d.purchase_requisition?.pr_no ?? `#${d.pr_id}`}
           </Link>
