@@ -28,9 +28,13 @@ export type NavIconName =
   | "unit"
   | "customer"
   | "supplier"
-  | "user";
+  | "user"
+  | "stockMovement"
+  | "auditLog";
 
 const ICONS: Record<NavIconName, ReactNode> = {
+  stockMovement: <><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4" /></>,
+  auditLog: <><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2" /></>,
   dashboard: (
     <>
       <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />

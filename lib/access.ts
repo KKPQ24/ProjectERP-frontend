@@ -6,6 +6,8 @@ const routeRoles: Record<string, readonly string[]> = {
   "/masterdata/units": [],
   "/masterdata/categories": [],
   "/masterdata/users": ["ADMIN"],
+  "/admin/audit-logs": ["ADMIN"],
+  "/inventory/stock-movements": ["PURCHASING", "ACCOUNTING"],
   "/masterdata/accounts": ["ACCOUNTING"],
   "/reports/trial-balance": ["ACCOUNTING"],
   "/purchasing/purchase-requisitions": ["PURCHASING"],

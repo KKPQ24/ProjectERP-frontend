@@ -18,6 +18,8 @@ function getPolicy() {
 
 const protectedRoutes = {
   '/masterdata/users': ['ADMIN'],
+  '/admin/audit-logs': ['ADMIN'],
+  '/inventory/stock-movements': ['PURCHASING', 'ACCOUNTING'],
   '/masterdata/accounts': ['ACCOUNTING'],
   '/reports/trial-balance': ['ACCOUNTING'],
   '/purchasing/purchase-requisitions': ['PURCHASING'],

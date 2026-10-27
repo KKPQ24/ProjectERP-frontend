@@ -28,6 +28,13 @@ export default function Sidebar() {
 
   const navGroups: NavGroup[] = [
     {
+      label: "ประวัติ", icon: "stockMovement",
+      links: [
+        { label: "Stock Movement", href: "/inventory/stock-movements", icon: "stockMovement" },
+        { label: "Audit Log", href: "/admin/audit-logs", icon: "auditLog" },
+      ],
+    },
+    {
       label: "ขาย",
       icon: "groupSales",
       links: [
